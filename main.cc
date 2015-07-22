@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
+#include "Tile.h"
+
 
 //screen size constants
 const int SCREEN_WIDTH = 640;
