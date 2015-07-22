@@ -25,4 +25,7 @@ public:
 
   //destroys the to death
   ~Tile();
+
+  //displays the tile
+  render(int x,int y,float scale);
 };
