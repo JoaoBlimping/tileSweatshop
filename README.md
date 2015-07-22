@@ -6,7 +6,8 @@ and maps for games.
 This is subject to change, but my initial plan for the commandline interface is
 as follows:
 
-```tileSweatshop newTileset name``` Creates a new tileset file called 'name'.
+```tileSweatshop newTileset tileWidth tileHeight name``` Creates a new tileset
+file called 'name' with tiles of 'tileWidth' width and 'tileHeight' height.
 
 ```tileSweatshop editTileset name``` opens the graphical editor for the tileset
 called 'name'.
