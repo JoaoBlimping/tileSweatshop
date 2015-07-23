@@ -15,7 +15,8 @@ called 'name'.
 ```tileSweatshop exportTileset in out``` converts the file 'in' to the picture
 file 'out'.
 
-```tileSweatshop newMap name``` creates a new map file called 'name'.
+```tileSweatshop newMap tileset name``` creates a new map file called 'name'
+using the tileset named 'tileset'.
 
 ```tileSweatshop editMap name``` opens the graphical editor for the map called
 'name'.
