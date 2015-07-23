@@ -27,5 +27,9 @@ public:
   ~Tile();
 
   //displays the tile
-  render(int x,int y,float scale);
+  //xPos is the horizontal position
+  //yPos is the vertical position
+  //scale is the scale to display it at
+  //renderer is the SDL rendering thingy
+  void render(int xPos,int yPos,float scale,SDL_Renderer * const renderer);
 };

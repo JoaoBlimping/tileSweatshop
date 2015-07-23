@@ -13,10 +13,6 @@ const int SCREEN_HEIGHT = 480;
 //returns true iff it was successful
 bool init();
 
-//loads media
-//returns true iff it was successful
-bool loadMedia();
-
 //Frees media and shuts down SDL
 void close();
 
@@ -27,8 +23,8 @@ SDL_Window * gWindow = NULL;
 //the window's surface
 SDL_Surface * gScreenSurface = NULL;
 
-//the image we will load to show on the screen
-SDL_Surface * gHelloWorld = NULL;
+//The window renderer
+SDL_Renderer * gRenderer = NULL;
 
 
 bool init()
@@ -53,23 +49,17 @@ bool init()
   //get window surface
   gScreenSurface = SDL_GetWindowSurface(gWindow);
 
-  //it worked!
-  return true;
-}
-
-
-bool loadMedia()
-{
-  //load splash image
-  gHelloWorld = SDL_LoadBMP("picture.bmp");
-  if (gHelloWorld == NULL)
+  gRenderer = SDL_CreateRenderer(gWindow,-1,SDL_RENDERER_ACCELERATED);
+  if( gRenderer == NULL )
   {
-    printf("unable to load image %s, SDL Error: %s\n","picture.bmp",
-           SDL_GetError());
+    printf( "Renderer could not be created! SDL Error: %s\n",SDL_GetError());
     return false;
   }
 
-  //it worked <3 <3
+  //Initialize renderer color
+  SDL_SetRenderDrawColor(gRenderer,0xFF,0xFF,0xFF,0xFF);
+
+  //it worked!
   return true;
 }
 
@@ -100,14 +90,6 @@ int main(int argc,char * args[])
     return 0;
   }
 
-  //load media
-  if (!loadMedia())
-  {
-    printf("failed to load media\n");
-    close();
-    return 0;
-  }
-
   //main loop flag
   bool quit = false;
 
@@ -126,8 +108,8 @@ int main(int argc,char * args[])
         quit = true;
       }
     }
-    //apply the image
-    SDL_BlitSurface(gHelloWorld,NULL,gScreenSurface,NULL);
+
+    //TODO: make a tile display
 
     //update the surface
     SDL_UpdateWindowSurface(gWindow);
