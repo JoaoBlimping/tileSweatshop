@@ -27,8 +27,5 @@ public:
   ~Tile();
 
   //displays the tile
-  //x is the horizontal position on the screen
-  //y is the vertical position on the screen
-  //scale is the scale to render it at
   render(int x,int y,float scale);
 };
