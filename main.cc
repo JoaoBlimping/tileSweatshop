@@ -26,6 +26,9 @@ SDL_Surface * gScreenSurface = NULL;
 //The window renderer
 SDL_Renderer * gRenderer = NULL;
 
+//a random tile that we will play with
+Tile gTile(32,32);
+
 
 bool init()
 {
@@ -59,6 +62,9 @@ bool init()
   //Initialize renderer color
   SDL_SetRenderDrawColor(gRenderer,0xFF,0xFF,0xFF,0xFF);
 
+  //put some rubbish on the tile
+  gTile.setPixel(10,10,0x01FF00FF);
+
   //it worked!
   return true;
 }
@@ -66,10 +72,6 @@ bool init()
 
 void close()
 {
-  //deallocate surface
-  SDL_FreeSurface(gHelloWorld);
-  gHelloWorld = NULL;
-
   //destroy window
   SDL_DestroyWindow(gWindow);
   gWindow = NULL;
@@ -109,7 +111,7 @@ int main(int argc,char * args[])
       }
     }
 
-    //TODO: make a tile display
+    gTile.render(10,10,1,gRenderer);
 
     //update the surface
     SDL_UpdateWindowSurface(gWindow);

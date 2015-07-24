@@ -12,10 +12,6 @@ height(pHeight)
   for (int x = 0;x < pWidth;x++)
   {
     this->pixels[x] = new int[pHeight];
-    for (int y = 0;y < pHeight;y++)
-    {
-      this->pixels[x][y] = 0;
-    }
   }
 };
 
@@ -37,6 +33,18 @@ Tile::~Tile()
 };
 
 
+int Tile::getPixel(int x,int y)
+{
+  return this->pixels[x][y];
+}
+
+
+void Tile::setPixel(int x,int y,int value)
+{
+  this->pixels[x][y] = value;
+}
+
+
 void Tile::render(int xPos,int yPos,float scale,SDL_Renderer * renderer)
 {
   for (int x = 0;x < this->width;x++)
@@ -51,8 +59,8 @@ void Tile::render(int xPos,int yPos,float scale,SDL_Renderer * renderer)
 
       SDL_Rect fillRect = {xPos + x * scale,yPos + y * scale,scale,scale};
 
-      SDL_SetRenderDrawColor(gRenderer,red,green,blue,0xFF);
-      SDL_RenderFillRect(gRenderer, &fillRect);
+      SDL_SetRenderDrawColor(renderer,red,green,blue,0xFF);
+      SDL_RenderFillRect(renderer, &fillRect);
     }
   }
 };
