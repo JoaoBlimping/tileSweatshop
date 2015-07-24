@@ -1,4 +1,4 @@
-OBJS = main.cc Tile.cc
+OBJS = main.cc Tile.cc TilesetScreen.cc
 
 CC = g++
 

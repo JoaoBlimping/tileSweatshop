@@ -1,5 +1,10 @@
 //A tile that contains graphics information
 
+
+#ifndef TILE_H
+#define TILE_H
+
+
 class Tile
 {
 public:
@@ -18,7 +23,7 @@ public:
   //pPixels is the data
   //pWidth is the width of the tile
   //pHeight is the height of the tile
-  Tile(int * * pPixels,int pWidth,int pHeight);
+  Tile(int * pPixels,int pWidth,int pHeight);
 
   //destroys the to death
   ~Tile();
@@ -43,5 +48,7 @@ public:
 
 private:
   //the tile's pixel data
-  int * * pixels;
+  int * pixels;
 };
+
+#endif

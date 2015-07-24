@@ -1,12 +1,18 @@
-#include <SDL2/SDL.h>
 #include <stdio.h>
 
+#include <SDL2/SDL.h>
+
+#include "Screen.h"
+#include "TilesetScreen.h"
 #include "Tile.h"
 
 
 //screen size constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
+
+//name of the program constant
+char const * const TITLE = "Tile Sweatshop";
 
 
 //starts up SDL and creates window
@@ -26,8 +32,8 @@ SDL_Surface * gScreenSurface = NULL;
 //The window renderer
 SDL_Renderer * gRenderer = NULL;
 
-//a random tile that we will play with
-Tile gTile(32,32);
+//the current screen
+Screen * currentScreen = NULL;
 
 
 bool init()
@@ -40,7 +46,7 @@ bool init()
   }
 
   //create window
-  gWindow = SDL_CreateWindow("Tile Sweatshop",SDL_WINDOWPOS_UNDEFINED,
+  gWindow = SDL_CreateWindow(TITLE,SDL_WINDOWPOS_UNDEFINED,
                              SDL_WINDOWPOS_UNDEFINED,SCREEN_WIDTH,SCREEN_HEIGHT,
                              SDL_WINDOW_SHOWN);
   if (gWindow == NULL)
@@ -62,8 +68,8 @@ bool init()
   //Initialize renderer color
   SDL_SetRenderDrawColor(gRenderer,0xFF,0xFF,0xFF,0xFF);
 
-  //put some rubbish on the tile
-  gTile.setPixel(10,10,0x01FF00FF);
+  //create the first screen
+  currentScreen = new TilesetScreen(32,32);
 
   //it worked!
   return true;
@@ -111,10 +117,14 @@ int main(int argc,char * args[])
       }
     }
 
-    gTile.render(10,10,1,gRenderer);
+    //update the screen
+    currentScreen->update();
 
-    //update the surface
-    SDL_UpdateWindowSurface(gWindow);
+    //render the screen
+    currentScreen->render(gRenderer);
+
+    //Update screen
+    SDL_RenderPresent(gRenderer);
   }
   //free resources and close SDL
   close();
