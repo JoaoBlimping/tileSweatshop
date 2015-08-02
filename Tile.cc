@@ -1,7 +1,5 @@
 #include <stdio.h>
 
-#include <SDL2/SDL.h>
-
 #include "Tile.h"
 
 
@@ -42,7 +40,7 @@ void Tile::setPixel(int x,int y,int value)
 }
 
 
-void Tile::render(int xPos,int yPos,float scale,SDL_Renderer * renderer)
+void Tile::render(int xPos,int yPos,float scale)
 {
   for (int x = 0;x < width;x++)
   {
@@ -54,10 +52,7 @@ void Tile::render(int xPos,int yPos,float scale,SDL_Renderer * renderer)
       int green = (colourData >> 8) & 0xFF;
       int blue = (colourData >> 16) & 0xFF;
 
-      SDL_Rect fillRect = {xPos + x * scale,yPos + y * scale,scale,scale};
-
-      SDL_SetRenderDrawColor(renderer,red,green,blue,0xFF);
-      SDL_RenderFillRect(renderer, &fillRect);
+      //dunno ayy
     }
   }
 };

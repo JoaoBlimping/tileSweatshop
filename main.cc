@@ -1,133 +1,182 @@
-#include <stdio.h>
+#include <gtk/gtk.h>
 
-#include <SDL2/SDL.h>
+/* Surface to store current scribbles */
+static cairo_surface_t * surface = NULL;
 
-#include "Screen.h"
-#include "TilesetScreen.h"
-#include "Tile.h"
-
-
-//screen size constants
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-
-//name of the program constant
-char const * const TITLE = "Tile Sweatshop";
-
-
-//starts up SDL and creates window
-//returns true iff it was successful
-bool init();
-
-//Frees media and shuts down SDL
-void close();
-
-
-//the window
-SDL_Window * gWindow = NULL;
-
-//the window's surface
-SDL_Surface * gScreenSurface = NULL;
-
-//The window renderer
-SDL_Renderer * gRenderer = NULL;
-
-//the current screen
-Screen * currentScreen = NULL;
-
-
-bool init()
+static void clear_surface ()
 {
-  //initialise SDL
-  if (SDL_Init(SDL_INIT_VIDEO) < 0)
-  {
-    printf("sdl couldn't initialise, SDL_Error: %s\n",SDL_GetError());
-    return false;
-  }
+  cairo_t * cr;
 
-  //create window
-  gWindow = SDL_CreateWindow(TITLE,SDL_WINDOWPOS_UNDEFINED,
-                             SDL_WINDOWPOS_UNDEFINED,SCREEN_WIDTH,SCREEN_HEIGHT,
-                             SDL_WINDOW_SHOWN);
-  if (gWindow == NULL)
-  {
-    printf("window couldn't be created, SDL_Error: %s\n",SDL_GetError());
-    return false;
-  }
+  cr = cairo_create(surface);
 
-  //get window surface
-  gScreenSurface = SDL_GetWindowSurface(gWindow);
+  cairo_set_source_rgb (cr, 1, 1, 1);
+  cairo_paint (cr);
 
-  gRenderer = SDL_CreateRenderer(gWindow,-1,SDL_RENDERER_ACCELERATED);
-  if( gRenderer == NULL )
-  {
-    printf( "Renderer could not be created! SDL Error: %s\n",SDL_GetError());
-    return false;
-  }
-
-  //Initialize renderer color
-  SDL_SetRenderDrawColor(gRenderer,0xFF,0xFF,0xFF,0xFF);
-
-  //create the first screen
-  currentScreen = new TilesetScreen(32,32);
-
-  //it worked!
-  return true;
+  cairo_destroy (cr);
 }
 
-
-void close()
+/* Create a new surface of the appropriate size to store our scribbles */
+static gboolean configure_event_cb (GtkWidget         *widget,
+                    GdkEventConfigure *event,
+                    gpointer           data)
 {
-  //destroy window
-  SDL_DestroyWindow(gWindow);
-  gWindow = NULL;
+  if (surface)
+    cairo_surface_destroy (surface);
 
-  //quit SDL subsystems
-  SDL_Quit();
+  surface = gdk_window_create_similar_surface (gtk_widget_get_window (widget),
+                                               CAIRO_CONTENT_COLOR,
+                                               gtk_widget_get_allocated_width (widget),
+                                               gtk_widget_get_allocated_height (widget));
+
+  /* Initialize the surface to white */
+  clear_surface ();
+
+  /* We've handled the configure event, no need for further processing. */
+  return TRUE;
 }
 
-
-//this is where the magic happens, baby
-int main(int argc,char * args[])
+/* Redraw the screen from the surface. Note that the ::draw
+ * signal receives a ready-to-be-used cairo_t that is already
+ * clipped to only draw the exposed areas of the widget
+ */
+static gboolean draw_cb (GtkWidget *widget,
+         cairo_t   *cr,
+         gpointer   data)
 {
-  //start up SDL and create window
-  if (!init())
-  {
-    printf("failed to initialise\n");
-    close();
-    return 0;
-  }
+  cairo_set_source_surface (cr, surface, 0, 0);
+  cairo_paint (cr);
 
-  //main loop flag
-  bool quit = false;
+  return FALSE;
+}
 
-  //Event handler
-  SDL_Event e;
+/* Draw a rectangle on the surface at the given position */
+static void draw_brush (GtkWidget *widget,
+            gdouble    x,
+            gdouble    y)
+{
+  cairo_t *cr;
 
-  //while the program is running
-  while (!quit)
-  {
-    //handle events on the queue
-    while (SDL_PollEvent(&e) != 0)
+  /* Paint to the surface, where we store our state */
+  cr = cairo_create (surface);
+
+  cairo_rectangle (cr, x - 3, y - 3, 6, 6);
+  cairo_fill (cr);
+
+  cairo_destroy (cr);
+
+  /* Now invalidate the affected region of the drawing area. */
+  gtk_widget_queue_draw_area (widget, x - 3, y - 3, 6, 6);
+}
+
+/* Handle button press events by either drawing a rectangle
+ * or clearing the surface, depending on which button was pressed.
+ * The ::button-press signal handler receives a GdkEventButton
+ * struct which contains this information.
+ */
+static gboolean button_press_event_cb (GtkWidget      *widget,
+                       GdkEventButton *event,
+                       gpointer        data)
+{
+  /* paranoia check, in case we haven't gotten a configure event */
+  if (surface == NULL)
+    return FALSE;
+
+  if (event->button == GDK_BUTTON_PRIMARY)
     {
-      //user requests quit
-      if (e.type == SDL_QUIT)
-      {
-        quit = true;
-      }
+      draw_brush (widget, event->x, event->y);
+    }
+  else if (event->button == GDK_BUTTON_SECONDARY)
+    {
+      clear_surface ();
+      gtk_widget_queue_draw (widget);
     }
 
-    //update the screen
-    currentScreen->update();
+  /* We've handled the event, stop processing */
+  return TRUE;
+}
 
-    //render the screen
-    currentScreen->render(gRenderer);
+/* Handle motion events by continuing to draw if button 1 is
+ * still held down. The ::motion-notify signal handler receives
+ * a GdkEventMotion struct which contains this information.
+ */
+static gboolean motion_notify_event_cb (GtkWidget      *widget,
+                        GdkEventMotion *event,
+                        gpointer        data)
+{
+  /* paranoia check, in case we haven't gotten a configure event */
+  if (surface == NULL)
+    return FALSE;
 
-    //Update screen
-    SDL_RenderPresent(gRenderer);
-  }
-  //free resources and close SDL
-  close();
+  if (event->state & GDK_BUTTON1_MASK)
+    draw_brush (widget, event->x, event->y);
+
+  /* We've handled it, stop processing */
+  return TRUE;
+}
+
+
+static void close_window (void)
+{
+  if (surface)
+    cairo_surface_destroy (surface);
+
+  gtk_main_quit ();
+}
+
+
+void printHello(GtkWidget * widget,gpointer data)
+{
+  g_print("ayy\n");
+}
+
+
+int main (int argc,char ** argv)
+{
+  GtkBuilder * builder;
+  GObject * window;
+  GObject * button;
+  GObject * drawingArea;
+
+  gtk_init(&argc,&argv);
+
+  //create a builder and load our description
+  builder = gtk_builder_new();
+  gtk_builder_add_from_file(builder,"assets/builder.ui",NULL);
+
+  //connect signal handlers to the constructed widgets
+  window = gtk_builder_get_object(builder,"window1");
+  g_signal_connect(window,"destroy",G_CALLBACK(close_window),NULL);
+
+  button = gtk_builder_get_object(builder,"button1");
+  g_signal_connect(button,"clicked",G_CALLBACK(printHello),NULL);
+
+
+  //add the rawing area
+  drawingArea = gtk_builder_get_object(builder,"drawingarea1");
+
+  /* Signals used to handle the backing surface */
+  g_signal_connect (drawingArea, "draw",
+                    G_CALLBACK (draw_cb), NULL);
+  g_signal_connect (drawingArea,"configure-event",
+                    G_CALLBACK (configure_event_cb), NULL);
+
+  /* Event signals */
+  g_signal_connect (drawingArea, "motion-notify-event",
+                    G_CALLBACK (motion_notify_event_cb), NULL);
+  g_signal_connect (drawingArea, "button-press-event",
+                    G_CALLBACK (button_press_event_cb), NULL);
+
+  /* Ask to receive events the drawing area doesn't normally
+   * subscribe to. In particular, we need to ask for the
+   * button press and motion notify events that want to handle.
+   */
+  gtk_widget_set_events (GTK_WIDGET(drawingArea), gtk_widget_get_events (GTK_WIDGET(drawingArea))
+                                     | GDK_BUTTON_PRESS_MASK
+                                     | GDK_POINTER_MOTION_MASK);
+
+  gtk_widget_show_all (GTK_WIDGET(window));
+
+  gtk_main();
 
   return 0;
 }

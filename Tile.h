@@ -44,7 +44,7 @@ public:
   //yPos is the vertical position
   //scale is the scale to display it at
   //renderer is the SDL rendering thingy
-  void render(int xPos,int yPos,float scale,SDL_Renderer * const renderer);
+  void render(int xPos,int yPos,float scale);
 
 private:
   //the tile's pixel data

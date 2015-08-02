@@ -1,10 +1,10 @@
-OBJS = main.cc Tile.cc TilesetScreen.cc
+OBJS = main.cc Tile.cc
 
 CC = g++
 
-COMPILER_FLAGS = -w
+COMPILER_FLAGS = `pkg-config --cflags gtk+-3.0`
 
-LINKER_FLAGS = -lSDL2
+LINKER_FLAGS = `pkg-config --libs gtk+-3.0`
 
 OBJ_NAME = tileSweatshop
 
