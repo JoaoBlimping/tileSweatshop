@@ -50,6 +50,15 @@ void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
     {
       int colourData = pixels[y * width + x];
 
+      bool alpha = (colourData >> 17) & 1;
+
+      //skip the rest if this pixel is meant to be unseen
+      if (alpha)
+      {
+        continue;
+      }
+
+      //get the rest of the colour data
       float red = ((colourData >> 16) & 0xFF) / 0xFF;
       float green = ((colourData >> 8) & 0xFF) / 0xFF;
       float blue = (colourData & 0xFF) / 0xFF;
@@ -57,7 +66,6 @@ void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
 
       cairo_set_source_rgb (cr,red,green,blue);
       cairo_rectangle(cr,xPos + x * scale,yPos + y * scale,scale,scale);
-
       cairo_fill (cr);
     }
   }
