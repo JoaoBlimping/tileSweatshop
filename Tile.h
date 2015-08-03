@@ -5,6 +5,9 @@
 #define TILE_H
 
 
+#include <gtk/gtk.h>
+
+
 class Tile
 {
 public:
@@ -43,8 +46,8 @@ public:
   //xPos is the horizontal position
   //yPos is the vertical position
   //scale is the scale to display it at
-  //renderer is the SDL rendering thingy
-  void render(int xPos,int yPos,float scale);
+  //cr is the drawing thingy
+  void render(int xPos,int yPos,float scale,cairo_t * cr);
 
 private:
   //the tile's pixel data

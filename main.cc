@@ -1,71 +1,96 @@
 #include <gtk/gtk.h>
 
-/* Surface to store current scribbles */
+#include "Tile.h"
+
+
+//Surface to store current scribbles
 static cairo_surface_t * surface = NULL;
 
-static void clear_surface ()
+
+//a tile that I intend to display
+static Tile * gTile = new Tile(32,32);
+
+//user's selected colours
+static float drawRed = 0;
+static float drawGreen = 0;
+static float drawBlue = 0;
+static bool drawAlpha = FALSE;
+
+static float alphaRed = 0.5;
+static float alphaGreen = 0.5;
+static float alphaBlue = 0.5;
+
+//other things that are related
+static float scale = 1;
+
+
+//draws that which is meant to be on the screen
+static void clearSurface ()
 {
   cairo_t * cr;
 
   cr = cairo_create(surface);
 
-  cairo_set_source_rgb (cr, 1, 1, 1);
+  cairo_set_source_rgb (cr,0.5,0.5,0.5);
   cairo_paint (cr);
+
+  gTile->render(0,0,1,cr);
 
   cairo_destroy (cr);
 }
 
-/* Create a new surface of the appropriate size to store our scribbles */
-static gboolean configure_event_cb (GtkWidget         *widget,
-                    GdkEventConfigure *event,
-                    gpointer           data)
+
+//creates the surface that is drawn to
+static gboolean configure_event_cb(GtkWidget * widget,
+                                    GdkEventConfigure * event,gpointer data)
 {
   if (surface)
-    cairo_surface_destroy (surface);
+  {
+    cairo_surface_destroy(surface);
+  }
 
-  surface = gdk_window_create_similar_surface (gtk_widget_get_window (widget),
-                                               CAIRO_CONTENT_COLOR,
-                                               gtk_widget_get_allocated_width (widget),
-                                               gtk_widget_get_allocated_height (widget));
+  surface = gdk_window_create_similar_surface(gtk_widget_get_window(widget),
+                                              CAIRO_CONTENT_COLOR,
+                                              gtk_widget_get_allocated_width(widget),
+                                              gtk_widget_get_allocated_height(widget));
 
-  /* Initialize the surface to white */
-  clear_surface ();
+  // Initialize the surface
+  clearSurface ();
 
-  /* We've handled the configure event, no need for further processing. */
+  //dealt with
   return TRUE;
 }
 
-/* Redraw the screen from the surface. Note that the ::draw
- * signal receives a ready-to-be-used cairo_t that is already
- * clipped to only draw the exposed areas of the widget
- */
-static gboolean draw_cb (GtkWidget *widget,
-         cairo_t   *cr,
-         gpointer   data)
+//called when part of the image needs to be redrawn
+//cr is a drawing thing which is already clipped to the offending area
+static gboolean draw_cb(GtkWidget * widget,cairo_t * cr,gpointer data)
 {
-  cairo_set_source_surface (cr, surface, 0, 0);
-  cairo_paint (cr);
+  clearSurface();
+  gTile->render(0,0,1,cr);
 
+  //let it continue on it's merry way <3
   return FALSE;
 }
 
-/* Draw a rectangle on the surface at the given position */
-static void draw_brush (GtkWidget *widget,
-            gdouble    x,
-            gdouble    y)
+
+//draw on the tile at the given position
+static void fillPixel(GtkWidget * widget,gdouble x,gdouble y)
 {
-  cairo_t *cr;
+  int drawX = (int)(x / scale);
+  int drawY = (int)(y / scale);
 
-  /* Paint to the surface, where we store our state */
-  cr = cairo_create (surface);
+  //make sure they aren't going out of the tile
+  if (drawX < 0 || drawY < 0 || drawX > gTile->width || drawY > gTile->height)
+  {
+    return;
+  }
 
-  cairo_rectangle (cr, x - 3, y - 3, 6, 6);
-  cairo_fill (cr);
 
-  cairo_destroy (cr);
+
+  gTile->setPixel(drawX,drawY,0x00FFFF);//TODO: use a real colour
 
   /* Now invalidate the affected region of the drawing area. */
-  gtk_widget_queue_draw_area (widget, x - 3, y - 3, 6, 6);
+  gtk_widget_queue_draw_area (widget,drawX,drawY,drawX + scale,drawY + scale);
 }
 
 /* Handle button press events by either drawing a rectangle
@@ -83,11 +108,11 @@ static gboolean button_press_event_cb (GtkWidget      *widget,
 
   if (event->button == GDK_BUTTON_PRIMARY)
     {
-      draw_brush (widget, event->x, event->y);
+      fillPixel (widget, event->x, event->y);
     }
   else if (event->button == GDK_BUTTON_SECONDARY)
     {
-      clear_surface ();
+      clearSurface ();
       gtk_widget_queue_draw (widget);
     }
 
@@ -108,7 +133,7 @@ static gboolean motion_notify_event_cb (GtkWidget      *widget,
     return FALSE;
 
   if (event->state & GDK_BUTTON1_MASK)
-    draw_brush (widget, event->x, event->y);
+    fillPixel(widget, event->x, event->y);
 
   /* We've handled it, stop processing */
   return TRUE;
@@ -130,7 +155,7 @@ void printHello(GtkWidget * widget,gpointer data)
 }
 
 
-int main (int argc,char ** argv)
+int main (int argc,char * argv[])
 {
   GtkBuilder * builder;
   GObject * window;

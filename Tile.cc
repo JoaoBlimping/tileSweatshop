@@ -2,6 +2,8 @@
 
 #include "Tile.h"
 
+#include <gtk/gtk.h>
+
 
 Tile::Tile(int pWidth,int pHeight):
 width(pWidth),
@@ -10,7 +12,7 @@ height(pHeight)
   this->pixels = new int[pWidth * pHeight];
   for (int i = 0;i < pWidth * pHeight;i++)
   {
-    this->pixels[i] = 5;
+    this->pixels[i] = 0xFF0000;
   }
 };
 
@@ -40,7 +42,7 @@ void Tile::setPixel(int x,int y,int value)
 }
 
 
-void Tile::render(int xPos,int yPos,float scale)
+void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
 {
   for (int x = 0;x < width;x++)
   {
@@ -48,11 +50,15 @@ void Tile::render(int xPos,int yPos,float scale)
     {
       int colourData = pixels[y * width + x];
 
-      int red = colourData & 0xFF;
-      int green = (colourData >> 8) & 0xFF;
-      int blue = (colourData >> 16) & 0xFF;
+      float red = ((colourData >> 16) & 0xFF) / 0xFF;
+      float green = ((colourData >> 8) & 0xFF) / 0xFF;
+      float blue = (colourData & 0xFF) / 0xFF;
 
-      //dunno ayy
+
+      cairo_set_source_rgb (cr,red,green,blue);
+      cairo_rectangle(cr,xPos + x * scale,yPos + y * scale,scale,scale);
+
+      cairo_fill (cr);
     }
   }
 };
