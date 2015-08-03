@@ -1,72 +1,41 @@
 #include <gtk/gtk.h>
+#include <cstdlib>
 
 #include "Tile.h"
 
 
-//Surface to store current scribbles
-static cairo_surface_t * surface = NULL;
+//how much it steps when you zoom in or out
+const float ZOOM_STEP = 0.5f;
 
 
 //a tile that I intend to display
 static Tile * gTile = new Tile(32,32);
 
 //user's selected colours
-static float drawRed = 0;
-static float drawGreen = 0;
-static float drawBlue = 0;
-static bool drawAlpha = FALSE;
+static int drawColour = 0;
 
-static float alphaRed = 0.5;
-static float alphaGreen = 0.5;
-static float alphaBlue = 0.5;
+static float alphaRed = 0.25;
+static float alphaGreen = 0.25;
+static float alphaBlue = 0.25;
 
 //other things that are related
 static float scale = 1;
 
 
-//draws that which is meant to be on the screen
-static void clearSurface ()
+//redraws everything
+static void redrawSurface(cairo_t * cr)
 {
-  cairo_t * cr;
-
-  cr = cairo_create(surface);
-
-  cairo_set_source_rgb (cr,0.5,0.5,0.5);
+  cairo_set_source_rgb (cr,alphaRed,alphaGreen,alphaBlue);
   cairo_paint (cr);
-
-  gTile->render(0,0,1,cr);
-
-  cairo_destroy (cr);
+  gTile->render(0,0,scale,cr);
 }
 
-
-//creates the surface that is drawn to
-static gboolean configure_event_cb(GtkWidget * widget,
-                                    GdkEventConfigure * event,gpointer data)
-{
-  if (surface)
-  {
-    cairo_surface_destroy(surface);
-  }
-
-  surface = gdk_window_create_similar_surface(gtk_widget_get_window(widget),
-                                              CAIRO_CONTENT_COLOR,
-                                              gtk_widget_get_allocated_width(widget),
-                                              gtk_widget_get_allocated_height(widget));
-
-  // Initialize the surface
-  clearSurface ();
-
-  //dealt with
-  return TRUE;
-}
 
 //called when part of the image needs to be redrawn
 //cr is a drawing thing which is already clipped to the offending area
-static gboolean draw_cb(GtkWidget * widget,cairo_t * cr,gpointer data)
+static gboolean drawEvent(GtkWidget * widget,cairo_t * cr,gpointer data)
 {
-  clearSurface();
-  gTile->render(0,0,1,cr);
+  redrawSurface(cr);
 
   //let it continue on it's merry way <3
   return FALSE;
@@ -85,34 +54,24 @@ static void fillPixel(GtkWidget * widget,gdouble x,gdouble y)
     return;
   }
 
+  gTile->setPixel(drawX,drawY,drawColour);
 
-
-  gTile->setPixel(drawX,drawY,0x00FFFF);//TODO: use a real colour
-
-  /* Now invalidate the affected region of the drawing area. */
-  gtk_widget_queue_draw_area (widget,drawX,drawY,drawX + scale,drawY + scale);
+  //Now invalidate the affected region of the drawing area
+  gtk_widget_queue_draw(widget);
 }
 
-/* Handle button press events by either drawing a rectangle
- * or clearing the surface, depending on which button was pressed.
- * The ::button-press signal handler receives a GdkEventButton
- * struct which contains this information.
- */
-static gboolean button_press_event_cb (GtkWidget      *widget,
+
+//when the mouse is clicked
+static gboolean buttonPressEvent (GtkWidget      *widget,
                        GdkEventButton *event,
                        gpointer        data)
 {
-  /* paranoia check, in case we haven't gotten a configure event */
-  if (surface == NULL)
-    return FALSE;
-
   if (event->button == GDK_BUTTON_PRIMARY)
     {
       fillPixel (widget, event->x, event->y);
     }
   else if (event->button == GDK_BUTTON_SECONDARY)
     {
-      clearSurface ();
       gtk_widget_queue_draw (widget);
     }
 
@@ -120,18 +79,12 @@ static gboolean button_press_event_cb (GtkWidget      *widget,
   return TRUE;
 }
 
-/* Handle motion events by continuing to draw if button 1 is
- * still held down. The ::motion-notify signal handler receives
- * a GdkEventMotion struct which contains this information.
- */
-static gboolean motion_notify_event_cb (GtkWidget      *widget,
+
+//when the mouse is moved
+static gboolean motionNotifyEvent (GtkWidget      *widget,
                         GdkEventMotion *event,
                         gpointer        data)
 {
-  /* paranoia check, in case we haven't gotten a configure event */
-  if (surface == NULL)
-    return FALSE;
-
   if (event->state & GDK_BUTTON1_MASK)
     fillPixel(widget, event->x, event->y);
 
@@ -140,27 +93,56 @@ static gboolean motion_notify_event_cb (GtkWidget      *widget,
 }
 
 
+//when the user presses the zoom in button
+static void zoomInEvent(GtkWidget * widget,gpointer data)
+{
+  scale += ZOOM_STEP;
+
+  gtk_widget_queue_draw(GTK_WIDGET(data));
+}
+
+
+//when the user presses the zoom in button
+static void zoomOutEvent(GtkWidget * widget,gpointer data)
+{
+  scale -= ZOOM_STEP;
+
+  if (scale <= 0)
+  {
+    scale = ZOOM_STEP;
+  }
+
+  gtk_widget_queue_draw(GTK_WIDGET(data));
+}
+
+
+//when someone has entered a new colour
+static void enterColourEvent(GtkEntry * entry,gpointer data)
+{
+  drawColour = (int)(strtol(gtk_entry_get_text(entry),NULL,0) & 0xFFFFFF);
+  g_print("colour is %X\n",drawColour);
+}
+
+
+//when the window is closed
 static void close_window (void)
 {
-  if (surface)
-    cairo_surface_destroy (surface);
-
   gtk_main_quit ();
 }
 
 
-void printHello(GtkWidget * widget,gpointer data)
-{
-  g_print("ayy\n");
-}
-
-
+//when the start of the program turns it's head
 int main (int argc,char * argv[])
 {
   GtkBuilder * builder;
+
   GObject * window;
-  GObject * button;
   GObject * drawingArea;
+  GObject * drawColourEntry;
+  GObject * zoomInButton;
+  GObject * zoomOutButton;
+  GObject * toolbox;
+
 
   gtk_init(&argc,&argv);
 
@@ -172,24 +154,23 @@ int main (int argc,char * argv[])
   window = gtk_builder_get_object(builder,"window1");
   g_signal_connect(window,"destroy",G_CALLBACK(close_window),NULL);
 
-  button = gtk_builder_get_object(builder,"button1");
-  g_signal_connect(button,"clicked",G_CALLBACK(printHello),NULL);
+  drawingArea = gtk_builder_get_object(builder,"drawingarea");
+  g_signal_connect(drawingArea,"draw",G_CALLBACK(drawEvent),NULL);
+  g_signal_connect(drawingArea,"motion-notify-event",G_CALLBACK(motionNotifyEvent),NULL);
+  g_signal_connect(drawingArea,"button-press-event",G_CALLBACK(buttonPressEvent),NULL);
 
+  drawColourEntry = gtk_builder_get_object(builder,"drawColourEntry");
+  g_signal_connect(drawColourEntry,"activate",G_CALLBACK(enterColourEvent),NULL);
 
-  //add the rawing area
-  drawingArea = gtk_builder_get_object(builder,"drawingarea1");
+  zoomInButton = gtk_builder_get_object(builder,"zoomInButton");
+  g_signal_connect(zoomInButton,"clicked",G_CALLBACK(zoomInEvent),drawingArea);
 
-  /* Signals used to handle the backing surface */
-  g_signal_connect (drawingArea, "draw",
-                    G_CALLBACK (draw_cb), NULL);
-  g_signal_connect (drawingArea,"configure-event",
-                    G_CALLBACK (configure_event_cb), NULL);
+  zoomOutButton = gtk_builder_get_object(builder,"zoomOutButton");
+  g_signal_connect(zoomOutButton,"clicked",G_CALLBACK(zoomOutEvent),drawingArea);
 
-  /* Event signals */
-  g_signal_connect (drawingArea, "motion-notify-event",
-                    G_CALLBACK (motion_notify_event_cb), NULL);
-  g_signal_connect (drawingArea, "button-press-event",
-                    G_CALLBACK (button_press_event_cb), NULL);
+  //add all the tools to the toolbox
+  toolbox = gtk_builder_get_object(builder,"toolbox");
+
 
   /* Ask to receive events the drawing area doesn't normally
    * subscribe to. In particular, we need to ask for the

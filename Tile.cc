@@ -50,7 +50,7 @@ void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
     {
       int colourData = pixels[y * width + x];
 
-      bool alpha = (colourData >> 17) & 1;
+      bool alpha = (colourData >> 24) & 1;
 
       //skip the rest if this pixel is meant to be unseen
       if (alpha)
