@@ -20,5 +20,8 @@ file 'out'.
 ```tileSweatshop editMap name``` opens the graphical editor for the map called
 'name'.
 
+yeah actually maybe i'll just make these as four different executables since
+only two of them actually even have a gui and have substantially different ones.
+
 There is no exportMap command, since this will be different for each game and
 users will have to write one of these themselves.

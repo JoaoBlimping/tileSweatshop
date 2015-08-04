@@ -53,7 +53,7 @@ void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
       bool alpha = (colourData >> 24) & 1;
 
       //skip the rest if this pixel is meant to be unseen
-      if (alpha)
+      if (!alpha)
       {
         continue;
       }

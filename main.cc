@@ -6,6 +6,7 @@
 
 //how much it steps when you zoom in or out
 const float ZOOM_STEP = 0.5f;
+const float OUTLINE_WIDTH = 1;
 
 
 //a tile that I intend to display
@@ -20,14 +21,29 @@ static float alphaBlue = 0.25;
 
 //other things that are related
 static float scale = 1;
+static int alpha = 1;
+
+static float tileX = 0;
+static float tileY = 0;
+static float dragOriginX = 0;
+static float dragOriginY = 0;
 
 
 //redraws everything
 static void redrawSurface(cairo_t * cr)
 {
-  cairo_set_source_rgb (cr,alphaRed,alphaGreen,alphaBlue);
-  cairo_paint (cr);
-  gTile->render(0,0,scale,cr);
+  //clear background
+  cairo_set_source_rgb(cr,alphaRed,alphaGreen,alphaBlue);
+  cairo_paint(cr);
+
+  //put a border around the tile to show where it ends
+  cairo_set_source_rgb (cr,0,0,0);
+  cairo_rectangle(cr,tileX,tileY,gTile->width * scale,gTile->height * scale);
+  cairo_set_line_width(cr,OUTLINE_WIDTH);
+  cairo_stroke(cr);
+
+  //display the tile
+  gTile->render(tileX,tileY,scale,cr);
 }
 
 
@@ -45,8 +61,8 @@ static gboolean drawEvent(GtkWidget * widget,cairo_t * cr,gpointer data)
 //draw on the tile at the given position
 static void fillPixel(GtkWidget * widget,gdouble x,gdouble y)
 {
-  int drawX = (int)(x / scale);
-  int drawY = (int)(y / scale);
+  int drawX = (int)((x - tileX) / scale);
+  int drawY = (int)((y - tileY) / scale);
 
   //make sure they aren't going out of the tile
   if (drawX < 0 || drawY < 0 || drawX > gTile->width || drawY > gTile->height)
@@ -54,28 +70,28 @@ static void fillPixel(GtkWidget * widget,gdouble x,gdouble y)
     return;
   }
 
-  gTile->setPixel(drawX,drawY,drawColour);
+  gTile->setPixel(drawX,drawY,drawColour | (alpha << 24));
 
   //Now invalidate the affected region of the drawing area
   gtk_widget_queue_draw(widget);
 }
 
 
-//when the mouse is clicked
-static gboolean buttonPressEvent (GtkWidget      *widget,
-                       GdkEventButton *event,
-                       gpointer        data)
+//event called when the mouse is clicked
+static gboolean buttonPressEvent(GtkWidget * widget,GdkEventButton * event,
+                                 gpointer data)
 {
   if (event->button == GDK_BUTTON_PRIMARY)
-    {
+  {
       fillPixel (widget, event->x, event->y);
-    }
-  else if (event->button == GDK_BUTTON_SECONDARY)
-    {
-      gtk_widget_queue_draw (widget);
-    }
+  }
+  else if (event->button == GDK_BUTTON_MIDDLE)
+  {
+      dragOriginX = event->x - tileX;
+      dragOriginY = event->y - tileY;
+  }
 
-  /* We've handled the event, stop processing */
+  //dealt with
   return TRUE;
 }
 
@@ -86,9 +102,46 @@ static gboolean motionNotifyEvent (GtkWidget      *widget,
                         gpointer        data)
 {
   if (event->state & GDK_BUTTON1_MASK)
+  {
     fillPixel(widget, event->x, event->y);
+  }
+  else if (event->state & GDK_BUTTON2_MASK)
+  {
+    tileX = event->x - dragOriginX;
+    tileY = event->y - dragOriginY;
+    gtk_widget_queue_draw(widget);
+  }
 
-  /* We've handled it, stop processing */
+  //dealt with
+  return TRUE;
+}
+
+
+static gboolean scrollEvent(GtkWidget * widget,GdkEventScroll * event,
+                            gpointer data)
+{
+  //do the scroll
+  if (event->direction == GDK_SCROLL_UP)
+  {
+    scale += ZOOM_STEP;
+  }
+
+  if (event->direction == GDK_SCROLL_DOWN)
+  {
+    scale -= ZOOM_STEP;
+  }
+
+  //make sure it doesn't go too low
+  //if it does, it like flips inside out which is mad
+  if (scale <= 0)
+  {
+    scale = ZOOM_STEP;
+  }
+
+  //redraw the screen
+  gtk_widget_queue_draw(widget);
+
+  //dealt with
   return TRUE;
 }
 
@@ -120,7 +173,13 @@ static void zoomOutEvent(GtkWidget * widget,gpointer data)
 static void enterColourEvent(GtkEntry * entry,gpointer data)
 {
   drawColour = (int)(strtol(gtk_entry_get_text(entry),NULL,0) & 0xFFFFFF);
-  g_print("colour is %X\n",drawColour);
+}
+
+
+//when someone toggles alpha drawing
+static void alphaToggleEvent(GtkToggleButton * button,gpointer data)
+{
+  alpha = 1 - alpha;
 }
 
 
@@ -141,6 +200,7 @@ int main (int argc,char * argv[])
   GObject * drawColourEntry;
   GObject * zoomInButton;
   GObject * zoomOutButton;
+  GObject * alphaButton;
   GObject * toolbox;
 
 
@@ -158,6 +218,7 @@ int main (int argc,char * argv[])
   g_signal_connect(drawingArea,"draw",G_CALLBACK(drawEvent),NULL);
   g_signal_connect(drawingArea,"motion-notify-event",G_CALLBACK(motionNotifyEvent),NULL);
   g_signal_connect(drawingArea,"button-press-event",G_CALLBACK(buttonPressEvent),NULL);
+  g_signal_connect(drawingArea,"scroll-event",G_CALLBACK(scrollEvent),NULL);
 
   drawColourEntry = gtk_builder_get_object(builder,"drawColourEntry");
   g_signal_connect(drawColourEntry,"activate",G_CALLBACK(enterColourEvent),NULL);
@@ -168,17 +229,18 @@ int main (int argc,char * argv[])
   zoomOutButton = gtk_builder_get_object(builder,"zoomOutButton");
   g_signal_connect(zoomOutButton,"clicked",G_CALLBACK(zoomOutEvent),drawingArea);
 
+  alphaButton = gtk_builder_get_object(builder,"alphaButton");
+  g_signal_connect(alphaButton,"toggled",G_CALLBACK(alphaToggleEvent),NULL);
+
   //add all the tools to the toolbox
   toolbox = gtk_builder_get_object(builder,"toolbox");
 
 
-  /* Ask to receive events the drawing area doesn't normally
-   * subscribe to. In particular, we need to ask for the
-   * button press and motion notify events that want to handle.
-   */
-  gtk_widget_set_events (GTK_WIDGET(drawingArea), gtk_widget_get_events (GTK_WIDGET(drawingArea))
-                                     | GDK_BUTTON_PRESS_MASK
-                                     | GDK_POINTER_MOTION_MASK);
+  //add some events that the drawing area doesn't naturally get
+  gtk_widget_set_events (GTK_WIDGET(drawingArea),
+                         gtk_widget_get_events (GTK_WIDGET(drawingArea)) |
+                         GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK |
+                         GDK_SCROLL_MASK);
 
   gtk_widget_show_all (GTK_WIDGET(window));
 
