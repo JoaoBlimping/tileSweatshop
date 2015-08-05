@@ -32,12 +32,22 @@ Tile::~Tile()
 
 int Tile::getPixel(int x,int y)
 {
+  if (x < 0 || x >= width || y < 0 || y >= height)
+  {
+    return -1;
+  }
+
   return pixels[y * height + x];
 }
 
 
 void Tile::setPixel(int x,int y,int value)
 {
+  if (x < 0 || x >= width || y < 0 || y >= height)
+  {
+    return;
+  }
+
   pixels[y * width + x] = value;
 }
 
@@ -59,10 +69,9 @@ void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
       }
 
       //get the rest of the colour data
-      float red = ((colourData >> 16) & 0xFF) / 0xFF;
-      float green = ((colourData >> 8) & 0xFF) / 0xFF;
-      float blue = (colourData & 0xFF) / 0xFF;
-
+      float red = (float)((colourData >> 16) & 0xFF) / 0xFF;
+      float green = (float)((colourData >> 8) & 0xFF) / 0xFF;
+      float blue = (float)(colourData & 0xFF) / 0xFF;
 
       cairo_set_source_rgb (cr,red,green,blue);
       cairo_rectangle(cr,xPos + x * scale,yPos + y * scale,scale,scale);

@@ -1,4 +1,4 @@
-OBJS = main.cc Tile.cc
+OBJS = main.cc Tile.cc Tool.cc Tools.cc PaintingContext.cc PaletteContext.cc
 
 CC = g++
 
