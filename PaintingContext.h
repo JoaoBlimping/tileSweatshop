@@ -10,6 +10,8 @@
 class PaintingContext
 {
 public:
+  PaintingContext();
+
   //set the tile that it is working with
   void setTile(Tile * tile);
 

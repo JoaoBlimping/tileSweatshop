@@ -15,14 +15,13 @@ const float OUTLINE_WIDTH = 1;
 
 
 //the tile contexts
-PaintingContext * painting = new PaintingContext();
-PaletteContext * palette = new PaletteContext();
+static PaintingContext * painting = new PaintingContext();
+static PaletteContext * palette = new PaletteContext();
 
-//the tool currently in use and stuff
+//pan context drawing stuff
 static Tool const * currentTool = Tools::pen;
-int alpha = 1;
 static int drawColour = 0;
-
+static int alpha = 1;
 
 static float alphaRed = 0.25;
 static float alphaGreen = 0.25;
@@ -213,6 +212,10 @@ static void close_window (void)
 //when the start of the program turns it's head
 int main (int argc,char * argv[])
 {
+  //give the thing a thing
+  painting->setTile(new Tile(32,32));
+
+
   GtkBuilder * builder;
 
   GObject * window;
@@ -272,6 +275,11 @@ int main (int argc,char * argv[])
   //add some events that the drawing area doesn't naturally get
   gtk_widget_set_events (GTK_WIDGET(drawingArea),
                          gtk_widget_get_events (GTK_WIDGET(drawingArea)) |
+                         GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK |
+                         GDK_SCROLL_MASK);
+
+  gtk_widget_set_events (GTK_WIDGET(palette),
+                         gtk_widget_get_events (GTK_WIDGET(palette)) |
                          GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK |
                          GDK_SCROLL_MASK);
 
