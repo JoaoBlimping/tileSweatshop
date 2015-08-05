@@ -1,16 +1,11 @@
 #include "PaletteContext.h"
 
+#include <gtk/gtk.h>
 
 #include "Tile.h"
 
 
-PaletteContext::PaletteContext()
-{
-  tile = new Tile(32,32);
-}
-
-
-Tile * PaletteContext::getTile()
+Tile * PaletteContext::getTile() const
 {
   return tile;
 }

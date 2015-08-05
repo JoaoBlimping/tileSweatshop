@@ -1,11 +1,13 @@
 #include "PaintingContext.h"
 
+#include <gtk/gtk.h>
+
 #include "Tile.h"
 
 
-PaintingContext::PaintingContext()
+PaintingContext::PaintingContext(Tile * tile)
 {
-  currentTile = NULL;
+  currentTile = tile;
 }
 
 
@@ -15,7 +17,7 @@ void PaintingContext::setTile(Tile * tile)
 }
 
 
-Tile * PaintingContext::getTile()
+Tile * PaintingContext::getTile() const
 {
   return currentTile;
 }

@@ -27,7 +27,7 @@ public:
   float dragOriginY = 0;
 
   //gives you the current tile to do stuff to
-  virtual Tile * getTile() = 0;
+  virtual Tile * getTile() const = 0;
 };
 
 

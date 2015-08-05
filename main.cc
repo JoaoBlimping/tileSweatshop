@@ -15,17 +15,17 @@ const float OUTLINE_WIDTH = 1;
 
 
 //the tile contexts
-static PaintingContext * painting = new PaintingContext();
-static PaletteContext * palette = new PaletteContext();
+static Context const * const paintingContext = new PaintingContext(new Tile(32,32));
+static Context const * const paletteContext = new PaletteContext();
 
 //pan context drawing stuff
 static Tool const * currentTool = Tools::pen;
 static int drawColour = 0;
 static int alpha = 1;
 
-static float alphaRed = 0.25;
-static float alphaGreen = 0.25;
-static float alphaBlue = 0.25;
+static float alphaRed = 0.2f;
+static float alphaGreen = 0.2f;
+static float alphaBlue = 0.2f;
 
 
 //redraws everything
@@ -43,19 +43,6 @@ static void redrawSurface(cairo_t * cr,Context * context)
 
   //display the tile
   context->getTile()->render(context->tileX,context->tileY,context->scale,cr);
-}
-
-
-//called when part of the image needs to be redrawn
-//cr is a drawing thing which is already clipped to the offending area
-static gboolean drawEvent(GtkWidget * widget,cairo_t * cr,gpointer data)
-{
-  Context * context = (Context *)data;
-
-  redrawSurface(cr,context);
-
-  //let it continue on it's merry way <3
-  return FALSE;
 }
 
 
@@ -99,6 +86,19 @@ static void pickPixel(GtkWidget * widget,gdouble x,gdouble y,Context * context)
 
   //Now invalidate the affected region of the drawing area
   gtk_widget_queue_draw(widget);
+}
+
+
+//called when part of the image needs to be redrawn
+//cr is a drawing thing which is already clipped to the offending area
+static gboolean drawEvent(GtkWidget * widget,cairo_t * cr,gpointer data)
+{
+  Context * context = (Context *)data;
+
+  redrawSurface(cr,context);
+
+  //let it continue on it's merry way <3
+  return FALSE;
 }
 
 
@@ -212,10 +212,6 @@ static void close_window (void)
 //when the start of the program turns it's head
 int main (int argc,char * argv[])
 {
-  //give the thing a thing
-  painting->setTile(new Tile(32,32));
-
-
   GtkBuilder * builder;
 
   GObject * window;
@@ -238,17 +234,17 @@ int main (int argc,char * argv[])
 
   //connect the drawing area
   drawingArea = gtk_builder_get_object(builder,"drawingarea");
-  g_signal_connect(drawingArea,"draw",G_CALLBACK(drawEvent),(gpointer)painting);
-  g_signal_connect(drawingArea,"motion-notify-event",G_CALLBACK(motionNotifyEvent),(gpointer)painting);
-  g_signal_connect(drawingArea,"button-press-event",G_CALLBACK(buttonPressEvent),(gpointer)painting);
-  g_signal_connect(drawingArea,"scroll-event",G_CALLBACK(scrollEvent),(gpointer)painting);
+  g_signal_connect(drawingArea,"draw",G_CALLBACK(drawEvent),(gpointer)paintingContext);
+  g_signal_connect(drawingArea,"motion-notify-event",G_CALLBACK(motionNotifyEvent),(gpointer)paintingContext);
+  g_signal_connect(drawingArea,"button-press-event",G_CALLBACK(buttonPressEvent),(gpointer)paintingContext);
+  g_signal_connect(drawingArea,"scroll-event",G_CALLBACK(scrollEvent),(gpointer)paintingContext);
 
   //connect the palette
   palette = gtk_builder_get_object(builder,"palette");
-  g_signal_connect(palette,"draw",G_CALLBACK(drawEvent),(gpointer)palette);
-  g_signal_connect(palette,"motion-notify-event",G_CALLBACK(motionNotifyEvent),(gpointer)palette);
-  g_signal_connect(palette,"button-press-event",G_CALLBACK(buttonPressEvent),(gpointer)palette);
-  g_signal_connect(palette,"scroll-event",G_CALLBACK(scrollEvent),(gpointer)palette);
+  g_signal_connect(palette,"draw",G_CALLBACK(drawEvent),(gpointer)paletteContext);
+  g_signal_connect(palette,"motion-notify-event",G_CALLBACK(motionNotifyEvent),(gpointer)paletteContext);
+  g_signal_connect(palette,"button-press-event",G_CALLBACK(buttonPressEvent),(gpointer)paletteContext);
+  g_signal_connect(palette,"scroll-event",G_CALLBACK(scrollEvent),(gpointer)paletteContext);
 
   drawColourEntry = gtk_builder_get_object(builder,"drawColourEntry");
   g_signal_connect(drawColourEntry,"activate",G_CALLBACK(enterColourEvent),NULL);

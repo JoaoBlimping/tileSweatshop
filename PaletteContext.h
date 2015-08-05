@@ -4,20 +4,18 @@
 #define PALETTE_CONTEXT_H
 
 
+#include "Context.h"
 #include "Tile.h"
 
 
-class PaletteContext
+class PaletteContext:public Context
 {
 public:
-  //creates the context's inner tile
-  PaletteContext();
-
   //gives you the current tile to do stuff to
-  virtual Tile * getTile();
+  virtual Tile * getTile() const;
 
 private:
-  Tile * tile;
+  Tile * tile = new Tile(32,32);
 };
 
 
