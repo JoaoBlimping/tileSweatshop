@@ -10,7 +10,7 @@ Tool::Tool(char * pName,void (*pApplyFunction)(int,int,int,Tile))
 }
 
 
-void Tool::apply(int x,int y,int colour,Tile tile)
+void Tool::apply(int x,int y,int colour,Tile tile)const
 {
   applyFunction(x,y,colour,tile);
 }

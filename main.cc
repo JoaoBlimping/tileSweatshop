@@ -2,6 +2,8 @@
 #include <cstdlib>
 
 #include "Tile.h"
+#include "Tool.h"
+#include "tools.h"
 
 
 //how much it steps when you zoom in or out
@@ -70,7 +72,7 @@ static void fillPixel(GtkWidget * widget,gdouble x,gdouble y)
     return;
   }
 
-  gTile->setPixel(drawX,drawY,drawColour | (alpha << 24));
+  //TODO: call a tool  | (alpha << 24)
 
   //Now invalidate the affected region of the drawing area
   gtk_widget_queue_draw(widget);
@@ -234,6 +236,10 @@ int main (int argc,char * argv[])
 
   //add all the tools to the toolbox
   toolbox = gtk_builder_get_object(builder,"toolbox");
+
+  gtkButton
+
+  gtk_box_pack_start(GTK_BOX(toolbox),);
 
 
   //add some events that the drawing area doesn't naturally get
