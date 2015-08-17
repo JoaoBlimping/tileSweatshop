@@ -1,5 +1,7 @@
 #include <gtk/gtk.h>
+
 #include <cstdlib>
+#include <vector>
 
 #include "Tile.h"
 #include "Tool.h"
@@ -12,6 +14,7 @@
 //how much it steps when you zoom in or out
 const float ZOOM_STEP = 0.5f;
 const float OUTLINE_WIDTH = 1;
+const int PALETTE_SAMPLE_SIZE = 10;
 
 
 //the tile contexts
@@ -26,6 +29,35 @@ static int alpha = 1;
 static float alphaRed = 0.2f;
 static float alphaGreen = 0.2f;
 static float alphaBlue = 0.2f;
+
+//all the tiles and the tile selection
+static int selectedTile = 0;
+static std::vector<Tile> tiles;
+
+//widgets that have to get changed by random shit
+GtkToggleButton * alphaButton;
+GtkEntry * drawColourEntry;
+GtkDrawingArea * palette;
+
+
+//multiplies all the colours a colour thing by a value!!!
+static int multiplyColour(int colour,float multiplier)
+{
+  int red = (int)((float)((colour >> 16) & 0xFF) * multiplier);
+  int green = (int)((float)((colour >> 8) & 0xFF) * multiplier);
+  int blue = (int)((float)(colour & 0xFF) * multiplier);
+
+  if (red > 0xFF)
+    red = 0xFF;
+
+  if (green > 0xFF)
+    green = 0xFF;
+
+  if (blue > 0xFF)
+    blue = 0xFF;
+
+  return (red << 16) | (green << 8) | (blue);
+}
 
 
 //redraws everything
@@ -82,10 +114,62 @@ static void pickPixel(GtkWidget * widget,gdouble x,gdouble y,Context * context)
     return;
   }
 
+
   drawColour = context->getTile()->getPixel(pickX,pickY) & 0xFFFFFF;
+  alpha = (context->getTile()->getPixel(pickX,pickY) >> 24) & 1;
 
   //Now invalidate the affected region of the drawing area
   gtk_widget_queue_draw(widget);
+}
+
+
+//create colour thingos
+static void setupPalette()
+{
+  Tile * paletteTile = paletteContext->getTile();
+
+  //make a darker one in the top left
+  int darkColour = (1 << 24) | multiplyColour(drawColour,0.5f);
+
+  for (int x = 0;x < PALETTE_SAMPLE_SIZE;x++)
+  {
+    for (int y = 0;y < PALETTE_SAMPLE_SIZE;y++)
+    {
+      paletteTile->setPixel(x,y,darkColour);
+    }
+  }
+
+  //make a lighter on after
+  int lightColour = (1 << 24) | multiplyColour(drawColour,2);
+
+  for (int x = paletteTile->width - PALETTE_SAMPLE_SIZE;x < paletteTile->width;x++)
+  {
+    for (int y = 0;y < PALETTE_SAMPLE_SIZE;y++)
+    {
+      paletteTile->setPixel(x,y,lightColour);
+    }
+  }
+
+  //redraw the palette
+  gtk_widget_queue_draw(GTK_WIDGET(palette));
+}
+
+
+//configures the drawingareas
+static gboolean configureEvent(GtkWidget * widget,GdkEventConfigure * event,
+                               gpointer data)
+{
+  Context * context = (Context *)data;
+
+  int windowWidth = gtk_widget_get_allocated_width(widget);
+  int windowHeight = gtk_widget_get_allocated_height(widget);
+  int tileWidth = context->getTile()->width * context->scale;
+  int tileHeight = context->getTile()->height * context->scale;
+
+  context->tileX = windowWidth / 2 - tileWidth / 2;
+  context->tileY = windowHeight / 2 - tileHeight / 2;
+
+  return TRUE;
 }
 
 
@@ -120,6 +204,8 @@ static gboolean buttonPressEvent(GtkWidget * widget,GdkEventButton * event,
   else if (event->button == GDK_BUTTON_SECONDARY)
   {
     pickPixel(widget, event->x, event->y,context);
+    gtk_toggle_button_set_active(alphaButton,alpha == 0);
+    setupPalette();
   }
 
   //dealt with
@@ -128,9 +214,8 @@ static gboolean buttonPressEvent(GtkWidget * widget,GdkEventButton * event,
 
 
 //when the mouse is moved
-static gboolean motionNotifyEvent (GtkWidget      *widget,
-                        GdkEventMotion *event,
-                        gpointer        data)
+static gboolean motionNotifyEvent(GtkWidget * widget,GdkEventMotion * event,
+                                   gpointer data)
 {
   Context * context = (Context *)data;
 
@@ -176,7 +261,7 @@ static gboolean scrollEvent(GtkWidget * widget,GdkEventScroll * event,
   //redraw the screen
   gtk_widget_queue_draw(widget);
 
-  //dealt with
+  //dealt with 8)
   return TRUE;
 }
 
@@ -185,13 +270,22 @@ static gboolean scrollEvent(GtkWidget * widget,GdkEventScroll * event,
 static void enterColourEvent(GtkEntry * entry,gpointer data)
 {
   drawColour = (int)(strtol(gtk_entry_get_text(entry),NULL,0) & 0xFFFFFF);
+  gtk_toggle_button_set_active(alphaButton,FALSE);
+  setupPalette();
 }
 
 
 //when someone toggles alpha drawing
 static void alphaToggleEvent(GtkToggleButton * button,gpointer data)
 {
-  alpha = 1 - alpha;
+  if (gtk_toggle_button_get_active(button))
+  {
+    alpha = 0;
+  }
+  else
+  {
+    alpha = 1;
+  }
 }
 
 
@@ -200,6 +294,23 @@ static void toolSelectedEvent(GtkToggleButton * button,gpointer data)
 {
     currentTool = (Tool *)data;
 }
+
+
+//when the tile select area needs to draw
+static gboolean tileSelectDrawEvent(GtkWidget * widget,cairo_t * cr,
+                                    gpointer data)
+{
+
+}
+
+
+//when the mouse is clicked in the tile select area
+static gboolean tileSelectClickEvent(GtkWidget * widget,GdkEventButton * event,
+                                 gpointer data)
+{
+
+}
+
 
 
 //when the window is closed
@@ -216,9 +327,8 @@ int main (int argc,char * argv[])
 
   GObject * window;
   GObject * drawingArea;
-  GObject * palette;
+  GObject * tileSelectArea;
   GObject * drawColourEntry;
-  GObject * alphaButton;
   GObject * toolbox;
 
 
@@ -235,21 +345,27 @@ int main (int argc,char * argv[])
   //connect the drawing area
   drawingArea = gtk_builder_get_object(builder,"drawingarea");
   g_signal_connect(drawingArea,"draw",G_CALLBACK(drawEvent),(gpointer)paintingContext);
+  g_signal_connect(drawingArea,"configure-event",G_CALLBACK(configureEvent),(gpointer)paintingContext);
   g_signal_connect(drawingArea,"motion-notify-event",G_CALLBACK(motionNotifyEvent),(gpointer)paintingContext);
   g_signal_connect(drawingArea,"button-press-event",G_CALLBACK(buttonPressEvent),(gpointer)paintingContext);
   g_signal_connect(drawingArea,"scroll-event",G_CALLBACK(scrollEvent),(gpointer)paintingContext);
 
   //connect the palette
-  palette = gtk_builder_get_object(builder,"palette");
+  palette = GTK_DRAWING_AREA(gtk_builder_get_object(builder,"palette"));
   g_signal_connect(palette,"draw",G_CALLBACK(drawEvent),(gpointer)paletteContext);
+  g_signal_connect(palette,"configure-event",G_CALLBACK(configureEvent),(gpointer)paletteContext);
   g_signal_connect(palette,"motion-notify-event",G_CALLBACK(motionNotifyEvent),(gpointer)paletteContext);
   g_signal_connect(palette,"button-press-event",G_CALLBACK(buttonPressEvent),(gpointer)paletteContext);
   g_signal_connect(palette,"scroll-event",G_CALLBACK(scrollEvent),(gpointer)paletteContext);
 
+  //connect the tile select area
+  tileSelectArea = gtk_builder_get_object(builder,"tileSelectArea");
+  g_signal_connect(tileSelectArea,"draw",G_CALLBACK(drawEvent),(gpointer)paintingContext);
+
   drawColourEntry = gtk_builder_get_object(builder,"drawColourEntry");
   g_signal_connect(drawColourEntry,"activate",G_CALLBACK(enterColourEvent),NULL);
 
-  alphaButton = gtk_builder_get_object(builder,"alphaButton");
+  alphaButton = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder,"alphaButton"));
   g_signal_connect(alphaButton,"toggled",G_CALLBACK(alphaToggleEvent),NULL);
 
   //add all the tools to the toolbox

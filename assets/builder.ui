@@ -95,8 +95,9 @@
             <property name="width_request">130</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">5</property>
-            <property name="margin_bottom">5</property>
+            <property name="margin_left">3</property>
+            <property name="margin_right">3</property>
+            <property name="margin_bottom">3</property>
           </object>
           <packing>
             <property name="left_attach">2</property>
