@@ -11,8 +11,6 @@
 class PaintingContext:public Context
 {
 public:
-  PaintingContext(Tile * tile);
-
   //set the tile that it is working with
   void setTile(Tile * tile);
 

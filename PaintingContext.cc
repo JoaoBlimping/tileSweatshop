@@ -5,12 +5,6 @@
 #include "Tile.h"
 
 
-PaintingContext::PaintingContext(Tile * tile)
-{
-  currentTile = tile;
-}
-
-
 void PaintingContext::setTile(Tile * tile)
 {
   currentTile = tile;

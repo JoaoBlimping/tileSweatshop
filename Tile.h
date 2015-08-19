@@ -31,6 +31,9 @@ public:
   //destroys the to death
   ~Tile();
 
+  //duplicates this tile and returns a pointer to a copy
+  Tile * duplicate();
+
   //gets the value of a pixel
   //x is the x position
   //y is the y position

@@ -12,7 +12,7 @@ height(pHeight)
   this->pixels = new int[pWidth * pHeight];
   for (int i = 0;i < pWidth * pHeight;i++)
   {
-    this->pixels[i] = 0xFF0000;
+    this->pixels[i] = 0;
   }
 };
 
@@ -28,6 +28,19 @@ Tile::~Tile()
 {
   delete[] pixels;
 };
+
+
+Tile * Tile::duplicate()
+{
+  Tile * child = new Tile(width,height);
+
+  for (int i = 0;i < width * height;i++)
+  {
+    child->pixels[i] = pixels[i];
+  }
+
+  return child;
+}
 
 
 int Tile::getPixel(int x,int y)

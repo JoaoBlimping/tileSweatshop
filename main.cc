@@ -1,7 +1,8 @@
 #include <gtk/gtk.h>
 
 #include <cstdlib>
-#include <vector>
+#include <list>
+#include <iterator>
 
 #include "Tile.h"
 #include "Tool.h"
@@ -15,11 +16,16 @@
 const float ZOOM_STEP = 0.5f;
 const float OUTLINE_WIDTH = 1;
 const int PALETTE_SAMPLE_SIZE = 10;
+const int TILE_SIZE = 32;
 
+
+//all the tiles and the tile selection
+static int selectedTile = 0;
+static std::list<Tile *> tiles;
 
 //the tile contexts
-static Context const * const paintingContext = new PaintingContext(new Tile(32,32));
-static Context const * const paletteContext = new PaletteContext();
+static PaintingContext * const paintingContext = new PaintingContext();
+static PaletteContext * const paletteContext = new PaletteContext();
 
 //pan context drawing stuff
 static Tool const * currentTool = Tools::pen;
@@ -30,15 +36,23 @@ static float alphaRed = 0.2f;
 static float alphaGreen = 0.2f;
 static float alphaBlue = 0.2f;
 
-//all the tiles and the tile selection
-static int selectedTile = 0;
-static std::vector<Tile> tiles;
+
 
 //widgets that have to get changed by random shit
 GtkToggleButton * alphaButton;
 GtkEntry * drawColourEntry;
+GtkDrawingArea * drawingArea;
 GtkDrawingArea * palette;
+GtkDrawingArea * tileSelectArea;
 
+
+//sets the correct to the painting context
+static void setPaintingTile()
+{
+  std::list<Tile *>::iterator it = tiles.begin();
+  std::advance(it,selectedTile);
+  paintingContext->setTile(*it);
+}
 
 //multiplies all the colours a colour thing by a value!!!
 static int multiplyColour(int colour,float multiplier)
@@ -99,6 +113,7 @@ static void fillPixel(GtkWidget * widget,gdouble x,gdouble y,Context * context)
 
   //Now invalidate the affected region of the drawing area
   gtk_widget_queue_draw(widget);
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
 }
 
 
@@ -296,21 +311,139 @@ static void toolSelectedEvent(GtkToggleButton * button,gpointer data)
 }
 
 
+//when you click the move left button
+static void moveBackEvent(GtkButton * button,gpointer data)
+{
+  //if it's already at the start, don't move anything
+  if (selectedTile == 0)
+  {
+    return;
+  }
+
+  //move the given tile backwards
+  std::list<Tile *>::iterator currentIterator = tiles.begin();
+  std::advance(currentIterator,selectedTile);
+  std::list<Tile *>::iterator behindIterator = tiles.begin();
+  std::advance(behindIterator,selectedTile - 1);
+
+  Tile * tempTile = *currentIterator;
+  *currentIterator = *behindIterator;
+  *behindIterator = tempTile;
+
+  selectedTile--;
+  setPaintingTile();
+
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+//when you click the move right button
+static void moveForwardEvent(GtkButton * button,gpointer data)
+{
+  //if it's already at the start, don't move anything
+  if (selectedTile == tiles.size() - 1)
+  {
+    return;
+  }
+
+  //move the given tile backwards
+  std::list<Tile *>::iterator currentIterator = tiles.begin();
+  std::advance(currentIterator,selectedTile);
+  std::list<Tile *>::iterator aheadIterator = tiles.begin();
+  std::advance(aheadIterator,selectedTile + 1);
+
+  Tile * tempTile = *currentIterator;
+  *currentIterator = *aheadIterator;
+  *aheadIterator = tempTile;
+
+  selectedTile++;
+  setPaintingTile();
+
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+//when you click the prev button
+static void prevEvent(GtkButton * button,gpointer data)
+{
+  //if it's already at the start, don't move anything
+  if (selectedTile == 0)
+  {
+    return;
+  }
+
+  selectedTile--;
+  setPaintingTile();
+  gtk_widget_queue_draw(GTK_WIDGET(drawingArea));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+//when you click the next button
+static void nextEvent(GtkButton * button,gpointer data)
+{
+  //if it's already at the start, don't move anything
+  if (selectedTile == tiles.size() - 1)
+  {
+    return;
+  }
+
+  selectedTile++;
+  setPaintingTile();
+  gtk_widget_queue_draw(GTK_WIDGET(drawingArea));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+//when you click the new tile button
+static void newTileEvent(GtkButton * button,gpointer data)
+{
+  std::list<Tile *>::iterator it = tiles.begin();
+  std::advance(it,selectedTile + 1);
+  tiles.insert(it,new Tile(TILE_SIZE,TILE_SIZE));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+
+  selectedTile++;
+  setPaintingTile();
+  gtk_widget_queue_draw(GTK_WIDGET(drawingArea));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+static void duplicateTileEvent(GtkButton * button,gpointer data)
+{
+  std::list<Tile *>::iterator it = tiles.begin();
+  std::advance(it,selectedTile);
+
+  tiles.insert(it++,(*it)->duplicate());
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+
+  selectedTile++;
+  setPaintingTile();
+  gtk_widget_queue_draw(GTK_WIDGET(drawingArea));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
 //when the tile select area needs to draw
 static gboolean tileSelectDrawEvent(GtkWidget * widget,cairo_t * cr,
                                     gpointer data)
 {
+  //fill in the background where there is tiles
+  cairo_set_source_rgb (cr,alphaRed,alphaGreen,alphaBlue);
+  cairo_rectangle(cr,0,0,tiles.size() * TILE_SIZE,TILE_SIZE);
+  cairo_fill (cr);
 
+  //this is where i will add code to draw the tile select area
+  int i = 0;
+  for (Tile * tile:tiles)
+  {
+    tile->render(i * tile->width,0,1,cr);
+    i++;
+  }
+
+  //outline the selected tile
+  cairo_set_source_rgb (cr,1,1,1);
+  cairo_rectangle(cr,selectedTile * TILE_SIZE,0,TILE_SIZE,TILE_SIZE);
+  cairo_set_line_width(cr,OUTLINE_WIDTH);
+  cairo_stroke(cr);
+
+  return FALSE;
 }
-
-
-//when the mouse is clicked in the tile select area
-static gboolean tileSelectClickEvent(GtkWidget * widget,GdkEventButton * event,
-                                 gpointer data)
-{
-
-}
-
 
 
 //when the window is closed
@@ -320,19 +453,21 @@ static void close_window (void)
 }
 
 
-//when the start of the program turns it's head
-int main (int argc,char * argv[])
+//initialises the gui
+static void init()
 {
   GtkBuilder * builder;
 
   GObject * window;
-  GObject * drawingArea;
-  GObject * tileSelectArea;
   GObject * drawColourEntry;
   GObject * toolbox;
+  GObject * moveBackButton;
+  GObject * moveForwardButton;
+  GObject * prevButton;
+  GObject * nextButton;
+  GObject * newTileButton;
+  GObject * duplicateTileButton;
 
-
-  gtk_init(&argc,&argv);
 
   //create a builder and load our description
   builder = gtk_builder_new();
@@ -343,7 +478,7 @@ int main (int argc,char * argv[])
   g_signal_connect(window,"destroy",G_CALLBACK(close_window),NULL);
 
   //connect the drawing area
-  drawingArea = gtk_builder_get_object(builder,"drawingarea");
+  drawingArea = GTK_DRAWING_AREA(gtk_builder_get_object(builder,"drawingarea"));
   g_signal_connect(drawingArea,"draw",G_CALLBACK(drawEvent),(gpointer)paintingContext);
   g_signal_connect(drawingArea,"configure-event",G_CALLBACK(configureEvent),(gpointer)paintingContext);
   g_signal_connect(drawingArea,"motion-notify-event",G_CALLBACK(motionNotifyEvent),(gpointer)paintingContext);
@@ -359,14 +494,34 @@ int main (int argc,char * argv[])
   g_signal_connect(palette,"scroll-event",G_CALLBACK(scrollEvent),(gpointer)paletteContext);
 
   //connect the tile select area
-  tileSelectArea = gtk_builder_get_object(builder,"tileSelectArea");
-  g_signal_connect(tileSelectArea,"draw",G_CALLBACK(drawEvent),(gpointer)paintingContext);
+  tileSelectArea = GTK_DRAWING_AREA(gtk_builder_get_object(builder,"tileSelectArea"));
+  g_signal_connect(tileSelectArea,"draw",G_CALLBACK(tileSelectDrawEvent),NULL);
+  gtk_widget_set_size_request(GTK_WIDGET(tileSelectArea),-1,TILE_SIZE);
 
   drawColourEntry = gtk_builder_get_object(builder,"drawColourEntry");
   g_signal_connect(drawColourEntry,"activate",G_CALLBACK(enterColourEvent),NULL);
 
   alphaButton = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder,"alphaButton"));
   g_signal_connect(alphaButton,"toggled",G_CALLBACK(alphaToggleEvent),NULL);
+
+  //connect the tile selection buttons
+  prevButton = gtk_builder_get_object(builder,"prevButton");
+  g_signal_connect(prevButton,"pressed",G_CALLBACK(prevEvent),NULL);
+
+  nextButton = gtk_builder_get_object(builder,"nextButton");
+  g_signal_connect(nextButton,"pressed",G_CALLBACK(nextEvent),NULL);
+
+  moveBackButton = gtk_builder_get_object(builder,"moveBackButton");
+  g_signal_connect(moveBackButton,"pressed",G_CALLBACK(moveBackEvent),NULL);
+
+  moveForwardButton = gtk_builder_get_object(builder,"moveForwardButton");
+  g_signal_connect(moveForwardButton,"pressed",G_CALLBACK(moveForwardEvent),NULL);
+
+  newTileButton = gtk_builder_get_object(builder,"newTileButton");
+  g_signal_connect(newTileButton,"pressed",G_CALLBACK(newTileEvent),NULL);
+
+  duplicateTileButton = gtk_builder_get_object(builder,"duplicateTileButton");
+  g_signal_connect(duplicateTileButton,"pressed",G_CALLBACK(duplicateTileEvent),NULL);
 
   //add all the tools to the toolbox
   toolbox = gtk_builder_get_object(builder,"toolbox");
@@ -395,7 +550,27 @@ int main (int argc,char * argv[])
                          GDK_BUTTON_PRESS_MASK | GDK_POINTER_MOTION_MASK |
                          GDK_SCROLL_MASK);
 
+  gtk_widget_set_events (GTK_WIDGET(tileSelectArea),
+                         gtk_widget_get_events (GTK_WIDGET(tileSelectArea)) |
+                         GDK_BUTTON_PRESS_MASK);
+
   gtk_widget_show_all (GTK_WIDGET(window));
+
+}
+
+
+//when the start of the program turns it's head
+int main (int argc,char * argv[])
+{
+  //initialise gtk
+  gtk_init(&argc,&argv);
+
+  //set up the painting context with it's first tile
+  Tile * firstTile = new Tile(TILE_SIZE,TILE_SIZE);
+  tiles.push_front(firstTile);
+  paintingContext->setTile(firstTile);
+
+  init();
 
   gtk_main();
 
