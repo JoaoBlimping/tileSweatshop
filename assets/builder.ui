@@ -57,9 +57,11 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="drawColourEntry">
+              <object class="GtkColorButton" id="colourSelectButton">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="title" translatable="yes">Draw Colour:</property>
               </object>
               <packing>
                 <property name="expand">False</property>

@@ -4,6 +4,7 @@
 #ifndef TILE_H
 #define TILE_H
 
+#include <iostream>
 
 #include <gtk/gtk.h>
 
@@ -27,6 +28,10 @@ public:
   //pWidth is the width of the tile
   //pHeight is the height of the tile
   Tile(int * pPixels,int pWidth,int pHeight);
+
+  //creates a tile with data from an input stream
+  //pixelStream
+  Tile(std::istream * pixelStream,int pWidth,int pHeight);
 
   //destroys the to death
   ~Tile();

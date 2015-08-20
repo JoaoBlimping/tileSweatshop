@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <iostream>
 
 #include "Tile.h"
 
@@ -22,6 +23,17 @@ pixels(pPixels),
 width(pWidth),
 height(pHeight)
 {};
+
+Tile::Tile(std::istream * pixelStream,int pWidth,int pHeight):
+width(pWidth),
+height(pHeight)
+{
+  this->pixels = new int[pWidth * pHeight];
+  for (int i = 0;i < pWidth * pHeight;i++)
+  {
+    (*pixelStream) >> this->pixels[i];
+  }
+};
 
 
 Tile::~Tile()
