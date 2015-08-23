@@ -16,7 +16,7 @@
 
 //how much it steps when you zoom in or out
 const float ZOOM_STEP = 0.5f;
-const float OUTLINE_WIDTH = 1;
+const float OUTLINE_WIDTH = 2;
 const int PALETTE_SAMPLE_SIZE = 4;
 
 
@@ -398,17 +398,19 @@ static gboolean tileSelectDrawEvent(GtkWidget * widget,cairo_t * cr,
   cairo_rectangle(cr,0,0,tiles.size() * tileWidth,tileHeight);
   cairo_fill (cr);
 
+  float scale = (float)gtk_widget_get_allocated_height(widget) / tileHeight;
+
   //this is where i will add code to draw the tile select area
   int i = 0;
   for (Tile * tile:tiles)
   {
-    tile->render(i * tile->width,0,1,cr);
+    tile->render(i * tile->width * scale,0,scale,cr);
     i++;
   }
 
   //outline the selected tile
   cairo_set_source_rgb (cr,1,1,1);
-  cairo_rectangle(cr,selectedTile * tileWidth,0,tileWidth,tileHeight);
+  cairo_rectangle(cr,selectedTile * tileWidth * scale,0,tileWidth * scale,tileHeight * scale);
   cairo_set_line_width(cr,OUTLINE_WIDTH);
   cairo_stroke(cr);
 
@@ -427,6 +429,38 @@ static void colourSelectEvent(GtkColorButton * button,gpointer userData)
 static void close_window (void)
 {
   gtk_main_quit ();
+}
+
+//when the user presses the save button
+static void saveEvent(GtkButton * button,gpointer data)
+{
+  //open the file
+  std::ofstream tilesetStream(filename);
+
+  //check it worked
+  if (!tilesetStream.is_open())
+  {
+    g_print("couldn't save to %s!",filename);
+    return;
+  }
+
+  //write tile dimensions
+  tilesetStream << tileWidth << std::endl;
+  tilesetStream << tileHeight << std::endl;
+
+  //now write the number of tiles
+  tilesetStream << tiles.size() << std::endl;
+
+  //now write in all the tiles <3
+  for (std::list<Tile *>::iterator it = tiles.begin();
+       it != tiles.end();
+       ++it)
+  {
+    (*it)->writeToStream(&tilesetStream);
+  }
+
+  //now close the stream
+  tilesetStream.close();
 }
 
 //loads the given tileset
@@ -464,8 +498,11 @@ static bool loadTileset(int argc,char * argv[])
   //read in the tiles
   for (int i = 0;i < nTiles;i++)
   {
-    tiles.push_front(new Tile(&tilesetStream,tileWidth,tileHeight));
+    tiles.push_back(new Tile(&tilesetStream,tileWidth,tileHeight));
   }
+
+  //close the stream
+  tilesetStream.close();
 
   //make sure there is a tile set as the current painting tile
   if (tiles.empty())
@@ -489,14 +526,13 @@ static void init()
 
   GObject * window;
   GObject * toolbox;
-
+  GObject * saveButton;
   GObject * moveBackButton;
   GObject * moveForwardButton;
   GObject * prevButton;
   GObject * nextButton;
   GObject * newTileButton;
   GObject * duplicateTileButton;
-
 
   //create a builder and load our description
   builder = gtk_builder_new();
@@ -527,9 +563,15 @@ static void init()
   g_signal_connect(tileSelectArea,"draw",G_CALLBACK(tileSelectDrawEvent),NULL);
   gtk_widget_set_size_request(GTK_WIDGET(tileSelectArea),-1,tileHeight);
 
+  //connect the save button
+  saveButton = gtk_builder_get_object(builder,"saveButton");
+  g_signal_connect(saveButton,"pressed",G_CALLBACK(saveEvent),NULL);
+
+  //connect the colour select button
   colourSelectButton = GTK_COLOR_BUTTON(gtk_builder_get_object(builder,"colourSelectButton"));
   g_signal_connect(colourSelectButton,"color-set",G_CALLBACK(colourSelectEvent),NULL);
 
+  //connect the alpha toggle button
   alphaButton = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder,"alphaButton"));
   g_signal_connect(alphaButton,"toggled",G_CALLBACK(alphaToggleEvent),NULL);
 

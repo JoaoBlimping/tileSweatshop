@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <iostream>
 
 #include "Tile.h"
@@ -79,6 +78,8 @@ void Tile::setPixel(int x,int y,int value)
 
 void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
 {
+
+  //draw the tile
   for (int x = 0;x < width;x++)
   {
     for (int y = 0;y < height;y++)
@@ -104,3 +105,12 @@ void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
     }
   }
 };
+
+
+void Tile::writeToStream(std::ostream * pixelStream)
+{
+  for (int i = 0;i < width * height;i++)
+  {
+    (*pixelStream) << pixels[i] << std::endl;
+  }
+}

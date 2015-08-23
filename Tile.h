@@ -1,4 +1,5 @@
 //A tile that contains graphics information
+//I know you're going to just love it!
 
 
 #ifndef TILE_H
@@ -13,10 +14,10 @@ class Tile
 {
 public:
   //the width of the tile
-  const int width;
+  int const width;
 
   //the height of the tile
-  const int height;
+  int const height;
 
   //creates a tile with no existing data
   //pWidth is the width of the tile
@@ -56,6 +57,10 @@ public:
   //scale is the scale to display it at
   //cr is the drawing thingy
   void render(int xPos,int yPos,float scale,cairo_t * cr);
+
+  //writes the tile's data to an output stream
+  //pixelStream is that very stream
+  void writeToStream(std::ostream * pixelStream);
 
 private:
   //the tile's pixel data
