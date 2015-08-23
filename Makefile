@@ -1,7 +1,7 @@
 INSTALL_PATH=/usr/local
 
 all:
-	cd src;make
+	cd src;make all
 
 install: all
-	cp src/tileSweatshop $(INSTALL_PATH)/bin/tileSweatshop
+	cp bin/tileSweatshop $(INSTALL_PATH)/bin/tileSweatshop
