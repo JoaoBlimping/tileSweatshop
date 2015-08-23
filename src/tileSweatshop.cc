@@ -63,25 +63,6 @@ int makeColour(double red,double green,double blue,bool alpha)
   return (alpha1Bit << 24) | (red8Bit << 16) | (green8Bit << 8) | blue8Bit;
 }
 
-//multiplies all the colours a colour thing by a value!!!
-int multiplyColour(int colour,float multiplier)
-{
-  int red = (int)((float)((colour >> 16) & 0xFF) * multiplier);
-  int green = (int)((float)((colour >> 8) & 0xFF) * multiplier);
-  int blue = (int)((float)(colour & 0xFF) * multiplier);
-
-  if (red > 0xFF)
-    red = 0xFF;
-
-  if (green > 0xFF)
-    green = 0xFF;
-
-  if (blue > 0xFF)
-    blue = 0xFF;
-
-  return (red << 16) | (green << 8) | (blue);
-}
-
 //sets the correct to the painting context
 static void setPaintingTile()
 {
@@ -240,11 +221,30 @@ static gboolean scrollEvent(GtkWidget * widget,GdkEventScroll * event,
   //do the scroll
   if (event->direction == GDK_SCROLL_UP)
   {
+    //move the tile's drawing origin so that it zooms from the middle
+    context->tileX -= (((context->scale + ZOOM_STEP) *
+                        context->getTile()->width) -
+                       (context->scale * context->getTile()->width)) / 2;
+
+    context->tileY -= (((context->scale + ZOOM_STEP) *
+                        context->getTile()->height) -
+                       (context->scale * context->getTile()->height)) / 2;
+
     context->scale += ZOOM_STEP;
+
   }
 
   if (event->direction == GDK_SCROLL_DOWN)
   {
+    //move the tile's drawing origin so that it zooms from the middle
+    context->tileX += (((context->scale + ZOOM_STEP) *
+                        context->getTile()->width) -
+                       (context->scale * context->getTile()->width)) / 2;
+
+    context->tileY += (((context->scale + ZOOM_STEP) *
+                        context->getTile()->height) -
+                       (context->scale * context->getTile()->height)) / 2;
+
     context->scale -= ZOOM_STEP;
   }
 

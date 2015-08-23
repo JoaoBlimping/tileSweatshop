@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=TileSweatshop
+Icon=icon
+StartupNotify=true
+Exec=@bindir@/tileSweatshop
