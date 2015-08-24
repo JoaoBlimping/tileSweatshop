@@ -1,6 +1,5 @@
 #include <gtk/gtk.h>
 
-#include <cstdlib>
 #include <list>
 #include <iterator>
 #include <iostream>
@@ -18,6 +17,8 @@
 const float ZOOM_STEP = 0.5f;
 const float OUTLINE_WIDTH = 2;
 const int PALETTE_SAMPLE_SIZE = 4;
+
+char const * UI_FILENAME = "/usr/local/etc/tileSweatshop/builder.ui";
 
 
 //all the tiles and the tile selection
@@ -536,7 +537,7 @@ static void init()
 
   //create a builder and load our description
   builder = gtk_builder_new();
-  gtk_builder_add_from_file(builder,"assets/builder.ui",NULL);
+  gtk_builder_add_from_file(builder,UI_FILENAME,NULL);
 
   //connect signal handlers to the constructed widgets
   window = gtk_builder_get_object(builder,"window1");
