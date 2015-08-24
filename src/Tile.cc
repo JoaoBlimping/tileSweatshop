@@ -107,6 +107,26 @@ void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
 };
 
 
+void Tile::shift(int xShift,int yShift)
+{
+  int * shiftedPixels = new int[width * height];
+  for (int x = 0;x < width;x++)
+  {
+    for (int y = 0;y < height;y++)
+    {
+      int postShiftX = x + xShift;
+      int postShiftY = y + yShift;
+      while (postShiftX >= width) postShiftX -= width;
+      while (postShiftY >= height) postShiftY -= height;
+
+      shiftedPixels[postShiftY * width + postShiftX] = pixels[y * width + x];
+    }
+  }
+  delete[] pixels;
+  pixels = shiftedPixels;
+}
+
+
 void Tile::writeToStream(std::ostream * pixelStream)
 {
   for (int i = 0;i < width * height;i++)

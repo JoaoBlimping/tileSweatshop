@@ -14,7 +14,7 @@
 
 
 //how much it steps when you zoom in or out
-const float ZOOM_STEP = 0.5f;
+const float ZOOM_STEP = 0.6f;
 const float OUTLINE_WIDTH = 2;
 const int PALETTE_SAMPLE_SIZE = 4;
 

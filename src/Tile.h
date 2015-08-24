@@ -58,6 +58,11 @@ public:
   //cr is the drawing thingy
   void render(int xPos,int yPos,float scale,cairo_t * cr);
 
+  //shifts the pixel data
+  //xShift is the horizontal shift amount
+  //yShift is the vertical shift amount
+  void shift(int xShift,int yShift);
+
   //writes the tile's data to an output stream
   //pixelStream is that very stream
   void writeToStream(std::ostream * pixelStream);
