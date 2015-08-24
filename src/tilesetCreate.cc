@@ -10,9 +10,9 @@ int main(int argc,char * argv[])
   //make sure number of arguments is correct
   if (argc != 4)
   {
-    std::cout << "usage is tilesetCreate tileWidth tileHeight filename "
-              << std::endl;
-    return 0;
+    std::cout << "usage is tilesetCreate tileWidth tileHeight filename " <<
+                 std::endl;
+    return 1;
   }
 
   //turn all the arguments into things
@@ -27,7 +27,7 @@ int main(int argc,char * argv[])
   if (!tilesetStream.is_open())
   {
     std::cout << "couldn't write to " << filename << std::endl;
-    return 0;
+    return 1;
   }
 
   //write tile dimensions
