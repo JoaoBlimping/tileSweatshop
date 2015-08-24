@@ -1,23 +1,30 @@
 # Tile Sweatshop
-A commandline based application which will be able to make tile based graphics
+A set of commandline based applications which will be able to make tile based graphics
 and maps for games.
+
+##Installation and Dependencies
+tileSweatshop requires the following to work:
+ - `pkg-config` for building gtk
+ - `gtk+-3.0` for the ui
+ - `g++` for compilation
+ - `make` for building
 
 ## How it will be used
 This is subject to change, but my initial plan for the commandline interface is
 as follows:
 
-```tileSweatshop newTileset tileWidth tileHeight name``` Creates a new tileset
-file called 'name' with tiles of 'tileWidth' width and 'tileHeight' height.
+`tilesetCreate tileWidth tileHeight filename` Creates a new tileset
+file called 'filename' with tiles of 'tileWidth' width and 'tileHeight' height.
 
-```tileSweatshop editTileset name``` opens the graphical editor for the tileset
-called 'name'.
+`tileSweatshop filename` opens the graphical editor for the tileset
+called 'filename'.
 
-```tileSweatshop exportTileset in out``` converts the file 'in' to the picture
+`tilesetExport in out` converts the file 'in' to the picture
 file 'out'.
 
-```tileSweatshop newMap name``` creates a new map file called 'name'.
+`mapCreate name` creates a new map file called 'name'.
 
-```tileSweatshop editMap name``` opens the graphical editor for the map called
+`mapSweatshop name` opens the graphical editor for the map called
 'name'.
 
 yeah actually maybe i'll just make these as four different executables since
