@@ -11,6 +11,7 @@
 #include "Context.h"
 #include "PaintingContext.h"
 #include "PaletteContext.h"
+#include "HotkeyManager.h"
 
 
 //how much it steps when you zoom in or out
@@ -539,9 +540,13 @@ static void init()
   builder = gtk_builder_new();
   gtk_builder_add_from_file(builder,UI_FILENAME,NULL);
 
-  //connect signal handlers to the constructed widgets
+  //add the window's signals
   window = gtk_builder_get_object(builder,"window1");
   g_signal_connect(window,"destroy",G_CALLBACK(close_window),NULL);
+  HotkeyManager::connect(GTK_WIDGET(window));
+
+  //add the hotkey manager's functions
+  HotkeyManager::addFunction({12,42},2,&scrollEvent);
 
   //connect the drawing area
   drawingArea = GTK_DRAWING_AREA(gtk_builder_get_object(builder,"drawingarea"));
@@ -626,6 +631,12 @@ static void init()
                          gtk_widget_get_events (GTK_WIDGET(tileSelectArea)) |
                          GDK_BUTTON_PRESS_MASK);
 
+  //make the window get button press stuff
+  gtk_widget_set_events(GTK_WIDGET(window),
+                        gtk_widget_get_events(GTK_WIDGET(window)) |
+                        GTK_BUTTON_PRESS_MASK | GTK_BUTTON_RELEASE_MASK);
+
+  //show all the widgets
   gtk_widget_show_all (GTK_WIDGET(window));
 
 }
