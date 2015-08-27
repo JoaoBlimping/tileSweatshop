@@ -21,8 +21,8 @@ void HotkeyManager::addFunction(std::vector<guint> * keys,void(*function)())
 
 void HotkeyManager::addFunction(guint * keys,int nKeys,void(*function)())
 {
-  std::vector<guint> * vectorKeys = new std::vector();
-  vectorKeys.resize(nKeys);
+  std::vector<guint> * vectorKeys = new std::vector<guint>();
+  vectorKeys->resize(nKeys);
 
   for (int i = 0;i < nKeys;i++)
   {
@@ -33,12 +33,12 @@ void HotkeyManager::addFunction(guint * keys,int nKeys,void(*function)())
 };
 
 
-gboolean HotkeyManager::keyPressEvent(GtkWidget * widget,GdkEvent * event,
+gboolean HotkeyManager::keyPressEvent(GtkWidget * widget,GdkEventKey * event,
                                       gpointer data)
 {
   try
   {
-    keyMap.at(GDK_EVENT_KEY(event)->keyval) = TRUE;
+    keyMap.at(event->keyval) = TRUE;
   }
   catch (...){}
 
@@ -47,10 +47,10 @@ gboolean HotkeyManager::keyPressEvent(GtkWidget * widget,GdkEvent * event,
        functionIterator != functionMap.end();++functionIterator)
   {
     bool good = true;
-    for (std::vector<int>::iterator keyIterator = myvector.begin();
-         keyIterator != myvector.end();++keyIterator)
+    for (std::map<guint,bool>::iterator keyIterator = keyMap.begin();
+         keyIterator != keyMap.end();++keyIterator)
     {
-      if (!keyMap.at(*keyIterator))
+      if (!keyIterator->second)
       {
         good = false;
       }
@@ -61,15 +61,21 @@ gboolean HotkeyManager::keyPressEvent(GtkWidget * widget,GdkEvent * event,
       functionIterator->second();
     }
   }
+
+  //let other things have this event if tthey want
+  return FALSE;
 };
 
 
-gboolean HotkeyManager::keyReleaseEvent(GtkWidget * widget,GdkEvent * event,
+gboolean HotkeyManager::keyReleaseEvent(GtkWidget * widget,GdkEventKey * event,
                                         gpointer data)
 {
   try
   {
-    keys.at(GDK_EVENT_KEY(event)->keyval) = FALSE;
+    keyMap.at(event->keyval) = FALSE;
   }
   catch (...){}
+
+  //let other things habe this event if they want
+  return FALSE;
 };

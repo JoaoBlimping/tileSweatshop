@@ -511,6 +511,13 @@ static bool loadTileset(int argc,char * argv[])
   return TRUE;
 }
 
+//rotates the current tile
+static void rotate()
+{
+  g_print("rotate!\n");
+}
+
+
 //initialises the gui
 static void init()
 {
@@ -536,7 +543,7 @@ static void init()
   HotkeyManager::connect(GTK_WIDGET(window));
 
   //add the hotkey manager's functions
-  HotkeyManager::addFunction(new guint[]{12,42},2,&scrollEvent);
+  HotkeyManager::addFunction(new guint[2]{12,42},2,&rotate);
 
   //connect the drawing area
   drawingArea = GTK_DRAWING_AREA(gtk_builder_get_object(builder,"drawingarea"));

@@ -28,10 +28,10 @@ namespace HotkeyManager
   void addFunction(guint * keys,int nKeys,void(*function)());
 
   //occurs when a key has been pressed
-  gboolean keyPressEvent(GtkWidget * widget,GdkEvent * event,gpointer data);
+  gboolean keyPressEvent(GtkWidget * widget,GdkEventKey * event,gpointer data);
 
   //occurs when a key has been released
-  gboolean keyReleaseEvent(GtkWidget * widget,GdkEvent * event,gpointer data);
+  gboolean keyReleaseEvent(GtkWidget * widget,GdkEventKey * event,gpointer data);
 }
 
 
