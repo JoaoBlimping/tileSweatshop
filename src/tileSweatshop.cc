@@ -12,6 +12,7 @@
 #include "PaintingContext.h"
 #include "PaletteContext.h"
 #include "HotkeyManager.h"
+#include "utils.h"
 
 
 //how much it steps when you zoom in or out
@@ -53,17 +54,6 @@ GtkDrawingArea * drawingArea;
 GtkDrawingArea * palette;
 GtkDrawingArea * tileSelectArea;
 
-
-//turns red, green, blue and alpha into a single int
-int makeColour(double red,double green,double blue,bool alpha)
-{
-  int red8Bit = (int)(255 * red);
-  int green8Bit = (int)(255 * green);
-  int blue8Bit = (int)(255 * blue);
-  int alpha1Bit = alpha ? 0 : 1;
-
-  return (alpha1Bit << 24) | (red8Bit << 16) | (green8Bit << 8) | blue8Bit;
-}
 
 //sets the correct to the painting context
 static void setPaintingTile()
@@ -546,7 +536,7 @@ static void init()
   HotkeyManager::connect(GTK_WIDGET(window));
 
   //add the hotkey manager's functions
-  HotkeyManager::addFunction({12,42},2,&scrollEvent);
+  HotkeyManager::addFunction(new guint[]{12,42},2,&scrollEvent);
 
   //connect the drawing area
   drawingArea = GTK_DRAWING_AREA(gtk_builder_get_object(builder,"drawingarea"));
@@ -634,7 +624,7 @@ static void init()
   //make the window get button press stuff
   gtk_widget_set_events(GTK_WIDGET(window),
                         gtk_widget_get_events(GTK_WIDGET(window)) |
-                        GTK_BUTTON_PRESS_MASK | GTK_BUTTON_RELEASE_MASK);
+                        GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK);
 
   //show all the widgets
   gtk_widget_show_all (GTK_WIDGET(window));

@@ -1,5 +1,6 @@
 #tileSweatshop's stuff
-TSS_OBJS = tileSweatshop.cc Tile.cc Tool.cc Tools.cc PaintingContext.cc PaletteContext.cc HotkeyManager.cc
+TSS_OBJS = tileSweatshop.cc Tile.cc Tool.cc Tools.cc PaintingContext.cc \
+PaletteContext.cc HotkeyManager.cc utils.cc
 TSS_NAME = tileSweatshop
 TSS_CFLAGS = -std=gnu++11 `pkg-config --cflags gtk+-3.0`
 TSS_LFLAGS = `pkg-config --libs gtk+-3.0`

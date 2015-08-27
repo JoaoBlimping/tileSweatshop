@@ -40,6 +40,7 @@ gboolean HotkeyManager::keyPressEvent(GtkWidget * widget,GdkEvent * event,
   {
     keyMap.at(GDK_EVENT_KEY(event)->keyval) = TRUE;
   }
+  catch (...){}
 
   //check if any sets of keys are now activated
   for (std::map<std::vector<guint> *,void(*)()>::iterator functionIterator = functionMap.begin();
@@ -70,4 +71,5 @@ gboolean HotkeyManager::keyReleaseEvent(GtkWidget * widget,GdkEvent * event,
   {
     keys.at(GDK_EVENT_KEY(event)->keyval) = FALSE;
   }
+  catch (...){}
 };
