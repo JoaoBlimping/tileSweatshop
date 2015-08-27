@@ -543,7 +543,7 @@ static void init()
   HotkeyManager::connect(GTK_WIDGET(window));
 
   //add the hotkey manager's functions
-  HotkeyManager::addFunction(new guint[2]{12,42},2,&rotate);
+  HotkeyManager::addFunction(new guint[2]{GDK_KEY_BackSpace,GDK_KEY_Control_L},2,&rotate);
 
   //connect the drawing area
   drawingArea = GTK_DRAWING_AREA(gtk_builder_get_object(builder,"drawingarea"));
