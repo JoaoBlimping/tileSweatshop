@@ -26,7 +26,12 @@ void HotkeyManager::addFunction(guint * keys,int nKeys,void(*function)())
 
   for (int i = 0;i < nKeys;i++)
   {
-    vectorKeys->push_back(keys[i]);
+    (*vectorKeys)[i] = keys[i];
+  }
+
+  for (int i = 0;i < vectorKeys->size();i++)
+  {
+    g_print("%d:%d\n",i,(*vectorKeys)[i]);
   }
 
   functionMap[vectorKeys] = function;
@@ -47,11 +52,12 @@ gboolean HotkeyManager::keyPressEvent(GtkWidget * widget,GdkEventKey * event,
        functionIterator != functionMap.end();++functionIterator)
   {
     bool good = true;
-    for (std::map<guint,bool>::iterator keyIterator = keyMap.begin();
-         keyIterator != keyMap.end();++keyIterator)
+    for (std::vector<guint>::iterator keyIterator = functionIterator->first->begin();
+         keyIterator != functionIterator->first->end();++keyIterator)
     {
-      if (!keyIterator->second)
+      if (!keyMap[*keyIterator])
       {
+        g_print("fail on %d\n",*keyIterator);
         good = false;
       }
     }
