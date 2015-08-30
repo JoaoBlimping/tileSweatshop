@@ -511,6 +511,48 @@ static bool loadTileset(int argc,char * argv[])
   return TRUE;
 }
 
+
+//shifts the tile left
+static void shiftLeft()
+{
+  paintingContext->getTile()->shift(-1,0);
+
+  //Now invalidate the affected region of the drawing area
+  gtk_widget_queue_draw(GTK_WIDGET(drawingArea));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+//shifts the tile right
+static void shiftRight()
+{
+  paintingContext->getTile()->shift(1,0);
+
+  //Now invalidate the affected region of the drawing area
+  gtk_widget_queue_draw(GTK_WIDGET(drawingArea));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+//shifts the tile up
+static void shiftUp()
+{
+  paintingContext->getTile()->shift(0,-1);
+
+  //Now invalidate the affected region of the drawing area
+  gtk_widget_queue_draw(GTK_WIDGET(drawingArea));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+//shifts the tile down
+static void shiftDown()
+{
+  paintingContext->getTile()->shift(0,1);
+
+  //Now invalidate the affected region of the drawing area
+  gtk_widget_queue_draw(GTK_WIDGET(drawingArea));
+  gtk_widget_queue_draw(GTK_WIDGET(tileSelectArea));
+}
+
+
 //rotates the current tile
 static void rotate()
 {
@@ -544,6 +586,11 @@ static void init()
 
   //add the hotkey manager's functions
   HotkeyManager::addFunction(new guint[2]{GDK_KEY_BackSpace,GDK_KEY_Control_L},2,&rotate);
+
+  HotkeyManager::addFunction(new guint[2]{GDK_KEY_Control_L,GDK_KEY_Left},2,&shiftLeft);
+  HotkeyManager::addFunction(new guint[2]{GDK_KEY_Control_L,GDK_KEY_Right},2,&shiftRight);
+  HotkeyManager::addFunction(new guint[2]{GDK_KEY_Control_L,GDK_KEY_Up},2,&shiftUp);
+  HotkeyManager::addFunction(new guint[2]{GDK_KEY_Control_L,GDK_KEY_Down},2,&shiftDown);
 
   //connect the drawing area
   drawingArea = GTK_DRAWING_AREA(gtk_builder_get_object(builder,"drawingarea"));

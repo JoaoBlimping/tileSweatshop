@@ -78,7 +78,6 @@ void Tile::setPixel(int x,int y,int value)
 
 void Tile::render(int xPos,int yPos,float scale,cairo_t * cr)
 {
-
   //draw the tile
   for (int x = 0;x < width;x++)
   {
@@ -116,6 +115,8 @@ void Tile::shift(int xShift,int yShift)
     {
       int postShiftX = x + xShift;
       int postShiftY = y + yShift;
+      while (postShiftX < 0) postShiftX += width;
+      while (postShiftY < 0) postShiftY += height;
       while (postShiftX >= width) postShiftX -= width;
       while (postShiftY >= height) postShiftY -= height;
 
